@@ -1,0 +1,8 @@
+{
+  "name": "sf-command-center",
+  "private": true,
+  "dependencies": {
+    "chokidar": "^4.0.0",
+    "ws": "^8.0.0"
+  }
+}

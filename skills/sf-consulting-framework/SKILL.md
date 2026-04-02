@@ -92,6 +92,10 @@ When the user asks to initialize a new project or engagement:
    - `engagement/deployment-checklists/` (empty directory)
    - `engagement/architecture/solution-design.md` (from `templates/solution-design.md.template`)
    - `references/` (empty directory)
+   - `dashboard/server.js` (from `templates/dashboard/server.js.template`)
+   - `dashboard/index.html` (from `templates/dashboard/index.html.template`)
+   - `dashboard/package.json` (from `templates/dashboard/package.json.template`)
+   - `dashboard/.gitignore` (containing `node_modules/`)
 4. For each initial epic, scaffold the epic directory using the epic scaffolding order in `references/folder-structure.md`.
 5. Populate files with any known information from the user's input.
 
@@ -483,3 +487,6 @@ All templates live in `templates/`. Use them when scaffolding new projects or ad
 | `deploy-checklist.md.template` | `engagement/deployment-checklists/{date}-{epic}-checklist.md` |
 | `test-plan.md.template` | `engagement/architecture/epics/{epic}/test-plan.md` |
 | `handoff.md.template` | `engagement/handoff-{date}.md` |
+| `dashboard/server.js.template` | `dashboard/server.js` |
+| `dashboard/index.html.template` | `dashboard/index.html` |
+| `dashboard/package.json.template` | `dashboard/package.json` |

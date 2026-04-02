@@ -1,0 +1,823 @@
+// SF Command Center - Dashboard Server
+// Serves the dashboard UI, parses framework markdown files into JSON,
+// provides real-time updates via WebSocket, and dispatches actions to claude CLI.
+
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+
+let chokidar, WebSocketServer;
+try {
+  chokidar = require('chokidar');
+  ({ WebSocketServer } = require('ws'));
+} catch (e) {
+  console.error('Missing dependencies. Run: npm install');
+  process.exit(1);
+}
+
+// Project root is one level up from dashboard/
+const ROOT = path.resolve(process.cwd(), '..');
+const DASHBOARD_DIR = __dirname;
+
+// ---------------------------------------------------------------------------
+// YAML Parser (simple, no library)
+// Handles: scalar values, single-level nested objects, arrays of objects
+// ---------------------------------------------------------------------------
+
+function parseYaml(text) {
+  const result = {};
+  const lines = text.split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    // Skip blank lines and comments
+    if (!line.trim() || line.trim().startsWith('#')) {
+      i++;
+      continue;
+    }
+
+    const indent = line.search(/\S/);
+
+    // Top-level key
+    if (indent === 0) {
+      const colonIdx = line.indexOf(':');
+      if (colonIdx === -1) { i++; continue; }
+
+      const key = line.slice(0, colonIdx).trim();
+      const valueStr = line.slice(colonIdx + 1).trim();
+
+      if (valueStr) {
+        // Inline scalar value
+        result[key] = parseYamlValue(valueStr);
+        i++;
+      } else {
+        // Could be a nested object or array of objects
+        // Peek at next non-empty line to determine which
+        let nextIdx = i + 1;
+        while (nextIdx < lines.length && !lines[nextIdx].trim()) nextIdx++;
+
+        if (nextIdx < lines.length && lines[nextIdx].trim().startsWith('-')) {
+          // Array of objects
+          const arr = [];
+          i = nextIdx;
+          while (i < lines.length) {
+            const arrLine = lines[i];
+            if (!arrLine.trim()) { i++; continue; }
+            if (arrLine.search(/\S/) === 0) break; // back to top-level
+
+            if (arrLine.trim().startsWith('-')) {
+              // Start of a new array item
+              const obj = {};
+              // Parse the first key on the dash line: "- key: value"
+              const dashContent = arrLine.trim().slice(1).trim();
+              if (dashContent) {
+                const dc = dashContent.indexOf(':');
+                if (dc !== -1) {
+                  obj[dashContent.slice(0, dc).trim()] = parseYamlValue(dashContent.slice(dc + 1).trim());
+                }
+              }
+              i++;
+              // Continue reading indented keys for this object
+              while (i < lines.length) {
+                const objLine = lines[i];
+                if (!objLine.trim()) { i++; continue; }
+                const objIndent = objLine.search(/\S/);
+                if (objIndent <= (arrLine.search(/\S/) || 0) && !objLine.trim().startsWith('-')) break;
+                if (objLine.trim().startsWith('-')) break; // next array item
+
+                const oc = objLine.trim().indexOf(':');
+                if (oc !== -1) {
+                  obj[objLine.trim().slice(0, oc).trim()] = parseYamlValue(objLine.trim().slice(oc + 1).trim());
+                }
+                i++;
+              }
+              arr.push(obj);
+            } else {
+              i++;
+            }
+          }
+          result[key] = arr;
+        } else {
+          // Nested object (single level)
+          const obj = {};
+          i = nextIdx;
+          while (i < lines.length) {
+            const nestedLine = lines[i];
+            if (!nestedLine.trim()) { i++; continue; }
+            if (nestedLine.search(/\S/) === 0) break; // back to top-level
+            const nc = nestedLine.trim().indexOf(':');
+            if (nc !== -1) {
+              obj[nestedLine.trim().slice(0, nc).trim()] = parseYamlValue(nestedLine.trim().slice(nc + 1).trim());
+            }
+            i++;
+          }
+          result[key] = obj;
+        }
+      }
+    } else {
+      i++;
+    }
+  }
+  return result;
+}
+
+function parseYamlValue(str) {
+  if (!str || str === 'null' || str === '~') return null;
+  if (str === 'true') return true;
+  if (str === 'false') return false;
+  // Strip surrounding quotes
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    return str.slice(1, -1);
+  }
+  // Try numeric
+  if (/^-?\d+(\.\d+)?$/.test(str)) return Number(str);
+  return str;
+}
+
+// ---------------------------------------------------------------------------
+// Utility: read file safely
+// ---------------------------------------------------------------------------
+
+function readFileSafe(filePath) {
+  try {
+    return fs.readFileSync(filePath, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Utility: parse a markdown table into array of objects
+// ---------------------------------------------------------------------------
+
+function parseMarkdownTable(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  // First line is header, second is separator
+  const headers = lines[0].split('|').map(h => h.trim()).filter(Boolean);
+  const rows = [];
+  for (let i = 2; i < lines.length; i++) {
+    const cells = lines[i].split('|').map(c => c.trim()).filter(Boolean);
+    if (cells.length === 0) continue;
+    const row = {};
+    headers.forEach((h, idx) => {
+      row[h] = cells[idx] || '';
+    });
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ---------------------------------------------------------------------------
+// Utility: extract a field value from a block of text
+// ---------------------------------------------------------------------------
+
+function extractField(text, fieldName) {
+  const regex = new RegExp(`\\*\\*${fieldName}:\\*\\*\\s*(.+)`, 'i');
+  const match = text.match(regex);
+  return match ? match[1].trim() : '';
+}
+
+// ---------------------------------------------------------------------------
+// Utility: get text content under a specific heading
+// ---------------------------------------------------------------------------
+
+function getSectionContent(text, heading) {
+  const regex = new RegExp(`^##\\s+${escapeRegex(heading)}\\s*$`, 'm');
+  const match = text.match(regex);
+  if (!match) return '';
+  const start = match.index + match[0].length;
+  // Find the next ## heading or end of text
+  const nextHeading = text.slice(start).search(/^## /m);
+  const end = nextHeading === -1 ? text.length : start + nextHeading;
+  return text.slice(start, end).trim();
+}
+
+function escapeRegex(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// ---------------------------------------------------------------------------
+// Markdown Parsers
+// ---------------------------------------------------------------------------
+
+/**
+ * Parse a questions.md file. Split on "### Q-" to get individual questions.
+ * Determine status from which section (## Open, ## Answered, ## Parked) each
+ * question falls under.
+ */
+function parseQuestions(filePath, scope) {
+  const content = readFileSafe(filePath);
+  if (!content) return [];
+
+  const questions = [];
+
+  // Build a map of line offsets for status sections
+  const openIdx = content.indexOf('## Open');
+  const answeredIdx = content.indexOf('## Answered');
+  const parkedIdx = content.indexOf('## Parked');
+
+  function getStatusAtOffset(offset) {
+    let status = 'Open';
+    if (openIdx !== -1 && offset > openIdx) status = 'Open';
+    if (answeredIdx !== -1 && offset > answeredIdx) status = 'Answered';
+    if (parkedIdx !== -1 && offset > parkedIdx) status = 'Parked';
+    // Refine: pick the section whose heading is closest before this offset
+    const candidates = [];
+    if (openIdx !== -1 && offset > openIdx) candidates.push({ status: 'Open', idx: openIdx });
+    if (answeredIdx !== -1 && offset > answeredIdx) candidates.push({ status: 'Answered', idx: answeredIdx });
+    if (parkedIdx !== -1 && offset > parkedIdx) candidates.push({ status: 'Parked', idx: parkedIdx });
+    if (candidates.length === 0) return 'Open';
+    candidates.sort((a, b) => b.idx - a.idx);
+    return candidates[0].status;
+  }
+
+  // Split on ### Q- headings while tracking their positions
+  const questionPattern = /### (Q-[A-Z]+-\d+)/g;
+  let match;
+  const positions = [];
+  while ((match = questionPattern.exec(content)) !== null) {
+    positions.push({ id: match[1], start: match.index });
+  }
+
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].start;
+    const end = i + 1 < positions.length ? positions[i + 1].start : content.length;
+    const block = content.slice(start, end);
+
+    const status = getStatusAtOffset(start);
+
+    const q = {
+      id: positions[i].id,
+      status,
+      asked: extractField(block, 'Asked'),
+      owner: extractField(block, 'Owner'),
+      question: extractField(block, 'Question'),
+      blocks: extractField(block, 'Blocks') || null,
+      affects: extractField(block, 'Affects') || null,
+      scope,
+    };
+
+    if (status === 'Answered') {
+      q.answer = extractField(block, 'Answer');
+      q.impact = extractField(block, 'Impact') || null;
+      // Extract answered date from "**Status:** Answered YYYY-MM-DD"
+      const statusMatch = block.match(/\*\*Status:\*\*\s*Answered\s+(\d{4}-\d{2}-\d{2})/i);
+      q.answeredDate = statusMatch ? statusMatch[1] : '';
+    }
+
+    questions.push(q);
+  }
+
+  return questions;
+}
+
+/**
+ * Parse execution-plan.md. Extract:
+ * - epicPhasing: table rows from "Epic Phasing" section
+ * - taskTables: keyed by epic name
+ * - blockedItems: table rows from "Blocked Items" section
+ */
+function parseExecutionPlan(filePath) {
+  const content = readFileSafe(filePath);
+  if (!content) return { epicPhasing: [], taskTables: {}, blockedItems: [] };
+
+  const result = { epicPhasing: [], taskTables: {}, blockedItems: [] };
+
+  // Epic Phasing table
+  const epicPhasingSection = getSectionContent(content, 'Epic Phasing');
+  if (epicPhasingSection) {
+    result.epicPhasing = parseMarkdownTable(epicPhasingSection);
+  }
+
+  // Blocked Items table
+  const blockedSection = getSectionContent(content, 'Blocked Items');
+  if (blockedSection) {
+    result.blockedItems = parseMarkdownTable(blockedSection);
+  }
+
+  // Task tables: each epic has a ### heading followed by a table
+  // Pattern: ### Epic Name\n\n| Order | Task | ...
+  const epicTablePattern = /### (.+)\n([\s\S]*?)(?=\n### |\n## |$)/g;
+  let epicMatch;
+  while ((epicMatch = epicTablePattern.exec(content)) !== null) {
+    const epicName = epicMatch[1].trim();
+    const sectionText = epicMatch[2];
+    // Check if this section contains a table
+    if (sectionText.includes('|')) {
+      // Extract just the table portion
+      const tableLines = sectionText.split('\n').filter(l => l.trim().startsWith('|'));
+      if (tableLines.length >= 2) {
+        result.taskTables[epicName] = parseMarkdownTable(tableLines.join('\n'));
+      }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Parse roadmap.md. Extract milestones, phase grid, current focus, upcoming.
+ */
+function parseRoadmap(filePath) {
+  const content = readFileSafe(filePath);
+  if (!content) return { milestones: [], epicPhaseGrid: [], currentFocus: '', upcomingMilestones: '' };
+
+  const result = {
+    milestones: [],
+    epicPhaseGrid: [],
+    currentFocus: '',
+    upcomingMilestones: '',
+  };
+
+  // Timeline table
+  const timelineSection = getSectionContent(content, 'Timeline');
+  if (timelineSection) {
+    result.milestones = parseMarkdownTable(timelineSection);
+  }
+
+  // Phase Status by Epic table
+  const phaseSection = getSectionContent(content, 'Phase Status by Epic');
+  if (phaseSection) {
+    result.epicPhaseGrid = parseMarkdownTable(phaseSection);
+  }
+
+  // Current Focus text
+  result.currentFocus = getSectionContent(content, 'Current Focus');
+
+  // Upcoming Milestones text
+  result.upcomingMilestones = getSectionContent(content, 'Upcoming Milestones');
+
+  return result;
+}
+
+/**
+ * Parse risks.md. Split on "### R-" to get individual risks.
+ */
+function parseRisks(filePath) {
+  const content = readFileSafe(filePath);
+  if (!content) return [];
+
+  const risks = [];
+  const riskPattern = /### (R-[A-Z]+-\d+)/g;
+  let match;
+  const positions = [];
+  while ((match = riskPattern.exec(content)) !== null) {
+    positions.push({ id: match[1], start: match.index });
+  }
+
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].start;
+    const end = i + 1 < positions.length ? positions[i + 1].start : content.length;
+    const block = content.slice(start, end);
+
+    risks.push({
+      id: positions[i].id,
+      identified: extractField(block, 'Identified'),
+      affects: extractField(block, 'Affects') || null,
+      risk: extractField(block, 'Risk'),
+      likelihood: extractField(block, 'Likelihood'),
+      impact: extractField(block, 'Impact'),
+      mitigation: extractField(block, 'Mitigation'),
+    });
+  }
+
+  return risks;
+}
+
+/**
+ * Parse requirements.md. Split on "### REQ-" to get individual requirements.
+ */
+function parseRequirements(filePath) {
+  const content = readFileSafe(filePath);
+  if (!content) return [];
+
+  const requirements = [];
+  const reqPattern = /### (REQ-[A-Z]+-\d+)/g;
+  let match;
+  const positions = [];
+  while ((match = reqPattern.exec(content)) !== null) {
+    positions.push({ id: match[1], start: match.index });
+  }
+
+  for (let i = 0; i < positions.length; i++) {
+    const start = positions[i].start;
+    const end = i + 1 < positions.length ? positions[i + 1].start : content.length;
+    const block = content.slice(start, end);
+
+    requirements.push({
+      id: positions[i].id,
+      added: extractField(block, 'Added'),
+      source: extractField(block, 'Source'),
+      priority: extractField(block, 'Priority'),
+      mapsTo: extractField(block, 'Maps To') || extractField(block, 'MapsTo'),
+      status: extractField(block, 'Status'),
+      requirement: extractField(block, 'Requirement'),
+      notes: extractField(block, 'Notes') || null,
+    });
+  }
+
+  return requirements;
+}
+
+/**
+ * Parse an epic's overview.md. Extract header fields.
+ */
+function parseEpicOverview(filePath) {
+  const content = readFileSafe(filePath);
+  if (!content) return null;
+
+  // Name from the first # heading
+  const nameMatch = content.match(/^#\s+(.+)/m);
+  const name = nameMatch ? nameMatch[1].trim() : '';
+
+  return {
+    name,
+    prefix: extractField(content, 'Prefix'),
+    phase: extractField(content, 'Phase'),
+    status: extractField(content, 'Status'),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Health Score
+// ---------------------------------------------------------------------------
+
+function computeHealth(questions, blockedItems, thresholds) {
+  const defaults = {
+    question_age_days: 7,
+    blocked_item_days: 5,
+    follow_up_stale_days: 3,
+  };
+  const t = { ...defaults, ...thresholds };
+  const signals = [];
+  const today = new Date();
+
+  function daysSince(dateStr) {
+    if (!dateStr) return 0;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return 0;
+    return Math.floor((today - d) / (1000 * 60 * 60 * 24));
+  }
+
+  // Open questions past age threshold
+  for (const q of questions) {
+    if (q.status !== 'Open') continue;
+
+    const age = daysSince(q.asked);
+    if (age > t.question_age_days) {
+      signals.push({ type: 'stale-question', id: q.id, days: age, threshold: t.question_age_days });
+    }
+
+    // Client-owned questions past follow-up threshold
+    if (q.owner && q.owner.toLowerCase().startsWith('client') && age > t.follow_up_stale_days) {
+      signals.push({ type: 'stale-client-question', id: q.id, days: age, threshold: t.follow_up_stale_days });
+    }
+  }
+
+  // Blocked items past threshold
+  for (const item of blockedItems) {
+    const since = item.Since || item.since;
+    if (since) {
+      const age = daysSince(since);
+      if (age > t.blocked_item_days) {
+        signals.push({ type: 'stale-blocked-item', item: item.Item || item.item, days: age, threshold: t.blocked_item_days });
+      }
+    }
+  }
+
+  let score = 'Green';
+  if (signals.length >= 4) score = 'Red';
+  else if (signals.length >= 1) score = 'Yellow';
+
+  return { score, signals };
+}
+
+// ---------------------------------------------------------------------------
+// State Builder
+// ---------------------------------------------------------------------------
+
+function buildState() {
+  // 1. Parse config
+  let config = {};
+  const configPath = path.join(ROOT, '.framework', 'config.yaml');
+  const configContent = readFileSafe(configPath);
+  if (configContent) {
+    const raw = parseYaml(configContent);
+    config = {
+      client: raw.client || '',
+      engagement: raw.engagement || '',
+      consultingFirm: raw.consulting_firm || '',
+      currentPhase: raw.current_phase || '',
+      startDate: raw.start_date || '',
+      targetEndDate: raw.target_end_date || '',
+      primaryContact: raw.primary_contact || {},
+      stakeholders: raw.stakeholders || [],
+      epicConfig: raw.epics || [],
+      lastStatusReport: raw.last_status_report || null,
+      riskThresholds: raw.risk_thresholds || {},
+    };
+  }
+
+  // 2. Discover epic directories
+  const epicsDir = path.join(ROOT, 'engagement', 'architecture', 'epics');
+  let epicDirs = [];
+  try {
+    epicDirs = fs.readdirSync(epicsDir).filter(name => {
+      try {
+        return fs.statSync(path.join(epicsDir, name)).isDirectory();
+      } catch {
+        return false;
+      }
+    });
+  } catch {
+    // epics directory may not exist yet
+  }
+
+  // 3. Parse engagement-level questions
+  let allQuestions = parseQuestions(
+    path.join(ROOT, 'engagement', 'questions.md'),
+    'Engagement'
+  );
+
+  // 4. Parse each epic's questions and overview
+  const epics = [];
+  for (const dir of epicDirs) {
+    const epicQuestionsPath = path.join(epicsDir, dir, 'questions.md');
+    const epicOverviewPath = path.join(epicsDir, dir, 'overview.md');
+
+    const overview = parseEpicOverview(epicOverviewPath);
+    const displayName = overview ? overview.name : dir;
+
+    // Merge epic questions into the main list
+    const epicQuestions = parseQuestions(epicQuestionsPath, displayName);
+    allQuestions = allQuestions.concat(epicQuestions);
+
+    epics.push({
+      name: displayName,
+      prefix: overview ? overview.prefix : '',
+      phase: overview ? overview.phase : '',
+      status: overview ? overview.status : '',
+      directory: dir,
+    });
+  }
+
+  // 5-8. Parse other framework files
+  const executionPlan = parseExecutionPlan(
+    path.join(ROOT, 'engagement', 'execution-plan.md')
+  );
+
+  const roadmap = parseRoadmap(
+    path.join(ROOT, 'engagement', 'roadmap.md')
+  );
+
+  const risks = parseRisks(
+    path.join(ROOT, 'engagement', 'risks.md')
+  );
+
+  const requirements = parseRequirements(
+    path.join(ROOT, 'engagement', 'requirements.md')
+  );
+
+  // 9. Compute health score
+  const health = computeHealth(
+    allQuestions,
+    executionPlan.blockedItems || [],
+    config.riskThresholds || {}
+  );
+
+  // 10. Return complete state
+  return {
+    config,
+    questions: allQuestions,
+    epics,
+    executionPlan,
+    roadmap,
+    risks,
+    requirements,
+    health,
+    timestamp: Date.now(),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Action Dispatcher
+// ---------------------------------------------------------------------------
+
+function handleDispatch(ws, message) {
+  const { action, questionId, filePath, text, scope, owner, blocks, reason } = message;
+  let prompt = '';
+
+  switch (action) {
+    case 'answer':
+      prompt = `Answer ${questionId} in ${filePath}. The answer is: "${text}". Run the standard question-answered workflow from .claude/rules/framework-rules.md: move the question from Open to Answered, record the answer and today's date, then assess impact: check if this answer changes any technical design (update if yes), check if it unblocks any work items (note if yes), check if it raises new questions (create if yes), check if it contradicts any decisions (flag if yes). Update the Impact field with links to everything changed.`;
+      break;
+
+    case 'raise':
+      prompt = `Raise a new question. Scope: ${scope}. Question: "${text}". Owner: ${owner}. ${blocks ? 'Blocks: ' + blocks + '.' : ''} Run the standard question-raised workflow from .claude/rules/framework-rules.md: determine the correct questions.md file for this scope, assign the next available ID, add the question under the Open section, and confirm what was created.`;
+      break;
+
+    case 'park':
+      prompt = `Park question ${questionId} in ${filePath}. Reason: "${reason}". Move it from the Open section to the Parked section and update its status.`;
+      break;
+
+    default:
+      ws.send(JSON.stringify({ type: 'dispatch-complete', action, error: `Unknown action: ${action}`, exitCode: 1 }));
+      return;
+  }
+
+  // Notify client that dispatch has started
+  ws.send(JSON.stringify({ type: 'dispatch-start', action, questionId: questionId || null }));
+
+  // Spawn claude CLI
+  const child = spawn('claude', [
+    '-p', prompt,
+    '--allowedTools', 'Read,Write,Edit,Bash,Grep,Glob',
+  ], {
+    cwd: ROOT,
+    shell: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  let fullOutput = '';
+
+  child.stdout.on('data', (data) => {
+    const text = data.toString();
+    fullOutput += text;
+    // Send each line as progress
+    const lines = text.split('\n').filter(l => l.trim());
+    for (const line of lines) {
+      ws.send(JSON.stringify({ type: 'dispatch-progress', text: line }));
+    }
+  });
+
+  child.stderr.on('data', (data) => {
+    const text = data.toString();
+    fullOutput += text;
+  });
+
+  child.on('close', (exitCode) => {
+    ws.send(JSON.stringify({
+      type: 'dispatch-complete',
+      action,
+      questionId: questionId || null,
+      response: fullOutput,
+      exitCode,
+    }));
+  });
+
+  child.on('error', (err) => {
+    ws.send(JSON.stringify({
+      type: 'dispatch-complete',
+      action,
+      questionId: questionId || null,
+      response: `Failed to spawn claude CLI: ${err.message}`,
+      exitCode: 1,
+    }));
+  });
+}
+
+// ---------------------------------------------------------------------------
+// HTTP Server
+// ---------------------------------------------------------------------------
+
+function addCorsHeaders(res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+const server = http.createServer((req, res) => {
+  addCorsHeaders(res);
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  if (req.url === '/' || req.url === '/index.html') {
+    const htmlPath = path.join(DASHBOARD_DIR, 'index.html');
+    try {
+      const html = fs.readFileSync(htmlPath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+    } catch {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('index.html not found');
+    }
+    return;
+  }
+
+  if (req.url === '/api/state') {
+    try {
+      const state = buildState();
+      const json = JSON.stringify(state);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(json);
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Not Found');
+});
+
+// ---------------------------------------------------------------------------
+// WebSocket Server
+// ---------------------------------------------------------------------------
+
+const wss = new WebSocketServer({ server });
+
+function broadcast(data) {
+  const payload = JSON.stringify(data);
+  for (const client of wss.clients) {
+    if (client.readyState === 1) { // WebSocket.OPEN
+      client.send(payload);
+    }
+  }
+}
+
+wss.on('connection', (ws) => {
+  // Send current state on connect
+  try {
+    const state = buildState();
+    ws.send(JSON.stringify({ type: 'state', data: state }));
+  } catch (err) {
+    ws.send(JSON.stringify({ type: 'error', message: err.message }));
+  }
+
+  ws.on('message', (raw) => {
+    try {
+      const message = JSON.parse(raw.toString());
+      if (message.type === 'dispatch') {
+        handleDispatch(ws, message);
+      }
+    } catch (err) {
+      ws.send(JSON.stringify({ type: 'error', message: `Invalid message: ${err.message}` }));
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// File Watcher
+// ---------------------------------------------------------------------------
+
+let debounceTimer = null;
+
+const watcher = chokidar.watch([
+  path.join(ROOT, 'engagement'),
+  path.join(ROOT, '.framework'),
+], {
+  persistent: true,
+  ignoreInitial: true,
+  depth: 10,
+});
+
+watcher.on('all', () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    try {
+      const state = buildState();
+      broadcast({ type: 'state', data: state });
+    } catch (err) {
+      console.error('Error rebuilding state on file change:', err.message);
+    }
+  }, 300);
+});
+
+// ---------------------------------------------------------------------------
+// Startup: find an available port starting at 3838
+// ---------------------------------------------------------------------------
+
+const PORT_START = 3838;
+const PORT_END = 3858;
+
+function tryListen(port) {
+  if (port > PORT_END) {
+    console.error(`Could not find an available port between ${PORT_START} and ${PORT_END}`);
+    process.exit(1);
+  }
+
+  server.listen(port, () => {
+    console.log(`SF Command Center running at http://localhost:${port}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      server.removeAllListeners('error');
+      tryListen(port + 1);
+    } else {
+      console.error('Server error:', err.message);
+      process.exit(1);
+    }
+  });
+}
+
+tryListen(PORT_START);

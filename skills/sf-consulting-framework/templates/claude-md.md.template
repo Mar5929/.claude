@@ -18,6 +18,7 @@
 | `engagement/roadmap.md` | High-level timeline, milestones, percent complete |
 | `engagement/architecture/solution-design.md` | Cross-epic solution architecture |
 | `.framework/config.yaml` | Project metadata and epic registry |
+| `dashboard/` | Local browser dashboard: run `node dashboard/server.js` |
 
 ## Epics
 

@@ -4,15 +4,28 @@
 # Track these
 !.gitignore
 !CLAUDE.md
+
 !agents/
 !agents/**
+# Exclude GSD agents
+agents/gsd-*
+
 !commands/
 !commands/**
+# Exclude GSD commands
+commands/gsd/
+
 !hooks/
 !hooks/**
+
 !rules/
 !rules/**
+# Exclude MCP rules
+rules/mcp-*
+
 !skills/
 !skills/**
-!templates/
-!templates/**
+# Only track SF skills
+skills/*
+!skills/sf-*/
+!skills/sf-*/**

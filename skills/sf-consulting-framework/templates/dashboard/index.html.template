@@ -1,0 +1,2059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SF Command Center</title>
+  <style>
+    /* ========================================
+       CSS Custom Properties (Theme Tokens)
+       ======================================== */
+    :root {
+      --bg-primary: #0f1117;
+      --bg-card: rgba(255,255,255,0.04);
+      --bg-sidebar: #13151d;
+      --border: rgba(255,255,255,0.06);
+      --text-primary: #e2e8f0;
+      --text-secondary: rgba(255,255,255,0.4);
+      --accent: #6366f1;
+      --success: #4ade80;
+      --warning: #facc15;
+      --danger: #f87171;
+    }
+
+    body.light {
+      --bg-primary: #f8f9fb;
+      --bg-card: #ffffff;
+      --bg-sidebar: #ffffff;
+      --border: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #94a3b8;
+      --accent: #4f46e5;
+      --success: #16a34a;
+      --warning: #a16207;
+      --danger: #dc2626;
+    }
+
+    /* ========================================
+       Reset and Base
+       ======================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+    }
+
+    /* ========================================
+       Sidebar
+       ======================================== */
+    #sidebar {
+      width: 62px;
+      min-height: 100vh;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 100;
+    }
+
+    .sidebar-health {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      margin-bottom: 16px;
+      cursor: pointer;
+    }
+
+    .sidebar-health.green { background: rgba(74, 222, 128, 0.2); }
+    .sidebar-health.yellow { background: rgba(250, 204, 21, 0.2); }
+    .sidebar-health.red { background: rgba(248, 113, 113, 0.2); }
+
+    .sidebar-nav {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+    }
+
+    .sidebar-nav-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+      color: var(--text-secondary);
+    }
+
+    .sidebar-nav-btn:hover {
+      background: rgba(255,255,255,0.06);
+    }
+
+    body.light .sidebar-nav-btn:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .sidebar-nav-btn.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .sidebar-bottom {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .theme-toggle {
+      width: 42px;
+      height: 42px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: background 0.15s;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255,255,255,0.06);
+    }
+
+    body.light .theme-toggle:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    /* ========================================
+       Main Content Area
+       ======================================== */
+    #main-wrapper {
+      margin-left: 62px;
+      flex: 1;
+      min-height: 100vh;
+      padding: 28px 32px;
+      max-width: 1280px;
+    }
+
+    /* ========================================
+       Common Component Styles
+       ======================================== */
+
+    /* Panel header */
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .panel-header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .panel-header .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    /* Stat cards grid */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+    }
+
+    .stat-card .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 28px;
+      font-weight: 600;
+    }
+
+    .stat-card .stat-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Two-column layout */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+
+    /* Badges */
+    .badge {
+      display: inline-block;
+      font-size: 13px;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-weight: 500;
+    }
+
+    .badge-accent { background: rgba(99,102,241,0.15); color: var(--accent); }
+    .badge-success { background: rgba(74,222,128,0.15); color: var(--success); }
+    .badge-warning { background: rgba(250,204,21,0.15); color: var(--warning); }
+    .badge-danger { background: rgba(248,113,113,0.15); color: var(--danger); }
+    .badge-gray { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+
+    body.light .badge-gray { background: rgba(0,0,0,0.05); }
+
+    /* Buttons */
+    .btn {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn:hover {
+      background: rgba(255,255,255,0.08);
+    }
+
+    body.light .btn:hover {
+      background: rgba(0,0,0,0.04);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn-accent:hover {
+      opacity: 0.9;
+      background: var(--accent);
+    }
+
+    .btn-danger {
+      color: var(--danger);
+    }
+
+    /* Filter bar */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 20px;
+    }
+
+    .filter-btn {
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .filter-btn.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    /* Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table td {
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    body.light .progress-bar {
+      background: rgba(0,0,0,0.06);
+    }
+
+    .progress-bar .fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    /* Forms */
+    textarea, input[type="text"], select {
+      font-size: 14px;
+      font-family: inherit;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      width: 100%;
+      resize: vertical;
+    }
+
+    textarea:focus, input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .hint-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Modal overlay */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 480px;
+      max-width: 90vw;
+    }
+
+    .modal-content h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    /* Collapsible sections */
+    .collapsible-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 10px 0;
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .collapsible-header .toggle-icon {
+      transition: transform 0.2s;
+    }
+
+    .collapsible-header.open .toggle-icon {
+      transform: rotate(90deg);
+    }
+
+    .collapsible-body {
+      display: none;
+      padding-bottom: 12px;
+    }
+
+    .collapsible-body.open {
+      display: block;
+    }
+
+    /* Blocks indicator */
+    .blocks-box {
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .blocks-box .blocks-label {
+      color: var(--danger);
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    /* Answer box */
+    .answer-box {
+      background: rgba(74,222,128,0.06);
+      border: 1px solid rgba(74,222,128,0.15);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 8px;
+    }
+
+    .answer-box .answer-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--success);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    /* Impact list */
+    .impact-list {
+      margin-top: 6px;
+      padding-left: 18px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .impact-list li {
+      margin-bottom: 2px;
+    }
+
+    /* Answer form */
+    .answer-form {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(99,102,241,0.04);
+      border: 1px solid rgba(99,102,241,0.15);
+      border-radius: 8px;
+    }
+
+    .answer-form .form-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .answer-form-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    /* Question card */
+    .question-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .question-card:hover {
+      border-color: rgba(255,255,255,0.12);
+    }
+
+    body.light .question-card:hover {
+      border-color: #cbd5e1;
+    }
+
+    .question-card .q-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .question-card .q-id {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .question-card .q-text {
+      font-size: 15px;
+      margin-bottom: 6px;
+    }
+
+    .question-card .q-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .question-card .q-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .question-card .park-link {
+      font-size: 13px;
+      color: var(--warning);
+      cursor: pointer;
+      background: none;
+      border: none;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+
+    /* Scope group header */
+    .scope-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 18px 0 10px;
+    }
+
+    .scope-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+
+    .scope-header .scope-badge {
+      font-size: 12px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+    }
+
+    /* Epic phase grid */
+    .phase-grid {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .phase-grid th,
+    .phase-grid td {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .phase-grid th {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    .phase-grid td.active-phase {
+      background: rgba(99,102,241,0.12);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .phase-grid td.complete-phase {
+      color: var(--success);
+    }
+
+    .phase-grid td.future-phase {
+      color: var(--text-secondary);
+      opacity: 0.5;
+    }
+
+    /* Execution phase cards */
+    .phase-cards {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .phase-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      min-width: 180px;
+      flex: 1;
+    }
+
+    .phase-card.complete { border-color: var(--success); }
+    .phase-card.in-progress { border-color: var(--accent); }
+    .phase-card.blocked { border-color: var(--danger); }
+    .phase-card.not-started { border-color: var(--border); }
+
+    .phase-card .phase-num {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .phase-card .phase-epic {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .phase-card .phase-status {
+      font-size: 13px;
+    }
+
+    /* Health badge large */
+    .health-badge-lg {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .health-badge-lg .health-icon {
+      font-size: 48px;
+      margin-bottom: 8px;
+    }
+
+    .health-badge-lg .health-label {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .health-badge-lg .health-count {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Risk signal card */
+    .signal-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .signal-card .signal-type {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .signal-card .signal-detail {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    /* Activity feed */
+    .activity-entry {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+
+    .activity-entry .activity-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .activity-entry .activity-time {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .activity-entry .activity-summary {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+
+    .activity-entry .activity-response {
+      font-size: 14px;
+      color: var(--text-secondary);
+      white-space: pre-wrap;
+      line-height: 1.5;
+    }
+
+    .activity-entry .activity-response strong {
+      color: var(--text-primary);
+    }
+
+    /* Recently resolved row */
+    .resolved-row {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+    }
+
+    .resolved-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      min-width: 260px;
+      flex-shrink: 0;
+    }
+
+    .resolved-card .resolved-id {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--success);
+    }
+
+    .resolved-card .resolved-date {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .resolved-card .resolved-answer {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .resolved-card .resolved-impact {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Epic progress bars */
+    .epic-progress-item {
+      margin-bottom: 12px;
+    }
+
+    .epic-progress-item .epic-progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .epic-progress-item .epic-phase-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Focus items */
+    .focus-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .focus-item:last-child {
+      border-bottom: none;
+    }
+
+    .focus-item .focus-priority {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .focus-item .focus-text {
+      font-size: 14px;
+    }
+
+    /* Toast container */
+    #toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-width: 380px;
+    }
+
+    .toast {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      animation: slideIn 0.2s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .toast.pending {
+      background: var(--accent);
+    }
+
+    .toast.pending .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .toast.success {
+      background: #16a34a;
+    }
+
+    .toast.error {
+      background: #dc2626;
+    }
+
+    /* Quoted text block */
+    .quoted-text {
+      border-left: 3px solid var(--accent);
+      padding: 8px 14px;
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin: 12px 0;
+      font-style: italic;
+    }
+
+    /* Blocked items section */
+    .blocked-section {
+      background: rgba(248,113,113,0.05);
+      border: 1px solid rgba(248,113,113,0.15);
+      border-radius: 10px;
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    .blocked-section h3 {
+      color: var(--danger);
+    }
+
+    /* Connection status indicator */
+    .connection-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .connection-dot.connected { background: var(--success); }
+    .connection-dot.disconnected { background: var(--danger); }
+
+    /* Section spacer */
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      margin-top: 8px;
+    }
+
+    /* Milestone mini progress bar */
+    .mini-progress {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      width: 120px;
+    }
+
+    .mini-progress .progress-bar {
+      flex: 1;
+    }
+
+    .mini-progress .pct {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    /* Status colors for cells */
+    .status-complete { color: var(--success); }
+    .status-in-progress { color: var(--accent); }
+    .status-blocked { color: var(--danger); }
+    .status-todo { color: var(--text-secondary); }
+
+    .likelihood-high, .impact-high { color: var(--danger); }
+    .likelihood-medium, .impact-medium { color: var(--warning); }
+    .likelihood-low, .impact-low { color: var(--success); }
+
+    /* Health badge small (for briefing header) */
+    .health-badge-sm {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .health-badge-sm.green { background: rgba(74,222,128,0.12); color: var(--success); }
+    .health-badge-sm.yellow { background: rgba(250,204,21,0.12); color: var(--warning); }
+    .health-badge-sm.red { background: rgba(248,113,113,0.12); color: var(--danger); }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <nav id="sidebar">
+    <div class="sidebar-health green" id="health-indicator" onclick="switchPanel('risks')" title="Health">
+      &#x2705;
+    </div>
+    <div class="sidebar-nav">
+      <button class="sidebar-nav-btn active" data-panel="briefing" onclick="switchPanel('briefing')" title="Briefing">&#x1F4CB;</button>
+      <button class="sidebar-nav-btn" data-panel="questions" onclick="switchPanel('questions')" title="Questions">&#x2753;</button>
+      <button class="sidebar-nav-btn" data-panel="execution" onclick="switchPanel('execution')" title="Execution">&#x26A1;</button>
+      <button class="sidebar-nav-btn" data-panel="risks" onclick="switchPanel('risks')" title="Risks">&#x1F6E1;&#xFE0F;</button>
+      <button class="sidebar-nav-btn" data-panel="roadmap" onclick="switchPanel('roadmap')" title="Roadmap">&#x1F5FA;&#xFE0F;</button>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="sidebar-nav-btn" data-panel="activity" onclick="switchPanel('activity')" title="Activity">&#x1F4EC;</button>
+      <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-toggle-btn">
+        &#x1F319;
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main content area -->
+  <div id="main-wrapper">
+    <div id="main-content">
+      <div style="text-align:center;padding:80px 0;color:var(--text-secondary);">
+        Connecting to server...
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- Modal container (for raise question) -->
+  <div id="modal-container"></div>
+
+  <script>
+    /* ========================================
+       State and Globals
+       ======================================== */
+    let state = {};
+    let currentPanel = 'briefing';
+    let activityFeed = [];
+    let questionFilters = { status: 'all', scope: 'all' };
+    let expandedQuestion = null;
+    let ws = null;
+
+    /* ========================================
+       Utility Functions
+       ======================================== */
+    function escapeHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    function truncate(str, len) {
+      if (!str) return '';
+      if (str.length <= len) return str;
+      return str.slice(0, len) + '...';
+    }
+
+    function daysSince(dateStr) {
+      if (!dateStr) return 0;
+      const d = new Date(dateStr);
+      const now = new Date();
+      return Math.floor((now - d) / (1000 * 60 * 60 * 24));
+    }
+
+    function relativeTime(ts) {
+      const diff = Date.now() - ts;
+      const mins = Math.floor(diff / 60000);
+      if (mins < 1) return 'just now';
+      if (mins < 60) return mins + ' minute' + (mins === 1 ? '' : 's') + ' ago';
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return hrs + ' hour' + (hrs === 1 ? '' : 's') + ' ago';
+      const days = Math.floor(hrs / 24);
+      return days + ' day' + (days === 1 ? '' : 's') + ' ago';
+    }
+
+    function getGreeting() {
+      const h = new Date().getHours();
+      if (h < 12) return 'Good Morning';
+      if (h < 17) return 'Good Afternoon';
+      return 'Good Evening';
+    }
+
+    function statusClass(status) {
+      if (!status) return '';
+      const s = status.toLowerCase();
+      if (s === 'complete' || s === 'completed' || s === 'done') return 'status-complete';
+      if (s === 'in progress') return 'status-in-progress';
+      if (s === 'blocked') return 'status-blocked';
+      return 'status-todo';
+    }
+
+    function ageBadge(q) {
+      if (q.status === 'Answered') {
+        return '<span class="badge badge-success">Answered ' + escapeHtml(q.answeredDate) + '</span>';
+      }
+      const days = daysSince(q.asked);
+      const threshold = (state.config && state.config.risk_thresholds && state.config.risk_thresholds.question_age_days) || 7;
+      let cls = 'badge-gray';
+      if (days >= threshold) cls = 'badge-danger';
+      else if (days >= threshold * 0.5) cls = 'badge-warning';
+      return '<span class="badge ' + cls + '">' + days + 'd</span>';
+    }
+
+    function healthColor() {
+      if (!state.health) return 'green';
+      return (state.health.score || 'Green').toLowerCase();
+    }
+
+    function healthEmoji() {
+      const c = healthColor();
+      if (c === 'green') return '&#x2705;';
+      if (c === 'yellow') return '&#x26A0;&#xFE0F;';
+      return '&#x1F6A8;';
+    }
+
+    function healthLabel() {
+      const c = healthColor();
+      if (c === 'green') return 'Healthy';
+      if (c === 'yellow') return 'At Risk';
+      return 'Critical';
+    }
+
+    function parsePercent(str) {
+      if (!str) return 0;
+      return parseInt(String(str).replace('%', ''), 10) || 0;
+    }
+
+    function signalTypeLabel(type) {
+      const map = {
+        'stale_question': 'Stale Question',
+        'stale_client_question': 'Stale Client Question',
+        'blocked_item': 'Blocked Item',
+        'follow_up_stale': 'Stale Follow-Up'
+      };
+      return map[type] || type;
+    }
+
+    function simpleMarkdown(text) {
+      if (!text) return '';
+      let html = escapeHtml(text);
+      // Bold
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      // Bullet lists: lines starting with "- "
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      if (html.includes('<li>')) {
+        html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>');
+      }
+      // Line breaks
+      html = html.replace(/\n/g, '<br>');
+      return html;
+    }
+
+    /* ========================================
+       WebSocket Connection
+       ======================================== */
+    function connect() {
+      const port = window.location.port || '3000';
+      ws = new WebSocket('ws://localhost:' + port);
+
+      ws.onopen = function() {
+        console.log('WebSocket connected');
+      };
+
+      ws.onmessage = function(event) {
+        try {
+          const msg = JSON.parse(event.data);
+          handleMessage(msg);
+        } catch (e) {
+          console.error('Failed to parse message:', e);
+        }
+      };
+
+      ws.onclose = function() {
+        console.log('WebSocket disconnected, reconnecting in 2s...');
+        setTimeout(connect, 2000);
+      };
+
+      ws.onerror = function(e) {
+        console.error('WebSocket error:', e);
+      };
+    }
+
+    function handleMessage(msg) {
+      switch (msg.type) {
+        case 'state':
+          state = msg.data || {};
+          updateHealthIndicator();
+          render();
+          break;
+
+        case 'dispatch-start':
+          showToast('pending', 'Submitting to Claude... (' + escapeHtml(msg.action) + ' ' + escapeHtml(msg.questionId || '') + ')');
+          break;
+
+        case 'dispatch-progress':
+          // Could update pending toast, but for simplicity just log
+          console.log('Dispatch progress:', msg.text);
+          break;
+
+        case 'dispatch-complete':
+          dismissPendingToasts();
+          if (msg.exitCode === 0) {
+            showToast('success', 'Completed: ' + escapeHtml(msg.action) + ' ' + escapeHtml(msg.questionId || ''));
+          } else {
+            showToast('error', 'Failed: ' + escapeHtml(msg.action) + ' ' + escapeHtml(msg.questionId || '') + ' (exit ' + msg.exitCode + ')');
+          }
+          activityFeed.unshift({
+            timestamp: Date.now(),
+            action: msg.action,
+            questionId: msg.questionId || '',
+            response: msg.response || '',
+            exitCode: msg.exitCode
+          });
+          if (currentPanel === 'activity') render();
+          break;
+      }
+    }
+
+    function dispatch(action) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(action));
+      }
+    }
+
+    /* ========================================
+       Theme Toggle
+       ======================================== */
+    function toggleTheme() {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem('sf-command-center-theme', isLight ? 'light' : 'dark');
+      document.getElementById('theme-toggle-btn').innerHTML = isLight ? '&#x2600;&#xFE0F;' : '&#x1F319;';
+    }
+
+    function loadTheme() {
+      const saved = localStorage.getItem('sf-command-center-theme');
+      if (saved === 'light') {
+        document.body.classList.add('light');
+        document.getElementById('theme-toggle-btn').innerHTML = '&#x2600;&#xFE0F;';
+      }
+    }
+
+    /* ========================================
+       Health Indicator (Sidebar)
+       ======================================== */
+    function updateHealthIndicator() {
+      const el = document.getElementById('health-indicator');
+      const color = healthColor();
+      el.className = 'sidebar-health ' + color;
+      el.innerHTML = healthEmoji();
+    }
+
+    /* ========================================
+       Panel Switching
+       ======================================== */
+    function switchPanel(name) {
+      currentPanel = name;
+      document.querySelectorAll('.sidebar-nav-btn').forEach(function(btn) {
+        btn.classList.toggle('active', btn.dataset.panel === name);
+      });
+      expandedQuestion = null;
+      render();
+    }
+
+    function render() {
+      switch (currentPanel) {
+        case 'briefing': renderBriefing(); break;
+        case 'questions': renderQuestions(); break;
+        case 'execution': renderExecution(); break;
+        case 'risks': renderRisks(); break;
+        case 'roadmap': renderRoadmap(); break;
+        case 'activity': renderActivity(); break;
+      }
+    }
+
+    /* ========================================
+       Panel: Briefing
+       ======================================== */
+    function renderBriefing() {
+      const c = state.config || {};
+      const questions = state.questions || [];
+      const blocked = (state.executionPlan && state.executionPlan.blockedItems) || [];
+      const milestones = (state.roadmap && state.roadmap.milestones) || [];
+      const reqs = state.requirements || [];
+      const epics = state.epics || [];
+
+      const openQs = questions.filter(function(q) { return q.status === 'Open'; });
+      const blockingQs = openQs.filter(function(q) { return q.blocks; });
+      const answeredRecent = questions.filter(function(q) {
+        return q.status === 'Answered' && q.answeredDate && daysSince(q.answeredDate) <= 7;
+      });
+      const unmappedReqs = reqs.filter(function(q) { return !q.mapsTo || q.mapsTo === '-'; });
+
+      // Roadmap completion
+      var completedMilestones = milestones.filter(function(m) { return (m.status || '').toLowerCase() === 'complete'; });
+      var roadmapPct = milestones.length > 0 ? Math.round(completedMilestones.length / milestones.length * 100) : 0;
+
+      // Recommended focus
+      var focusItems = computeFocus(questions);
+
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>' + getGreeting() + '</h1>';
+      html += '<div class="subtitle">' + escapeHtml(c.client || 'Project') + ' &middot; ' + escapeHtml(c.current_phase || '') + ' &middot; ' + new Date().toLocaleDateString() + '</div>';
+      html += '</div>';
+      html += '<div class="health-badge-sm ' + healthColor() + '">' + healthEmoji() + ' ' + healthLabel() + '</div>';
+      html += '</div>';
+
+      // Stat cards
+      html += '<div class="stat-grid">';
+      html += statCard('Open Questions', openQs.length, blockingQs.length + ' blocking work');
+      html += statCard('Blocked Items', blocked.length, blocked.length + ' on critical path', blocked.length > 0 ? 'var(--danger)' : null);
+      html += statCard('Roadmap', roadmapPct + '%', escapeHtml(c.current_phase || 'N/A'), 'var(--success)');
+      html += statCard('Requirements', reqs.length, unmappedReqs.length + ' unmapped');
+      html += '</div>';
+
+      // Two-column: Focus + Blocking Questions
+      html += '<div class="two-col">';
+
+      // Recommended focus
+      html += '<div class="card">';
+      html += '<h3>Recommended Focus</h3>';
+      if (focusItems.length === 0) {
+        html += '<div style="color:var(--text-secondary);font-size:14px;padding:8px 0;">No urgent items.</div>';
+      } else {
+        focusItems.forEach(function(item, i) {
+          html += '<div class="focus-item">';
+          html += '<div class="focus-priority">#' + (i + 1) + '</div>';
+          html += '<div class="focus-text">' + escapeHtml(item.text) + '</div>';
+          html += '</div>';
+        });
+      }
+      html += '</div>';
+
+      // Blocking questions
+      html += '<div class="card">';
+      html += '<h3>Blocking Questions</h3>';
+      if (blockingQs.length === 0) {
+        html += '<div style="color:var(--text-secondary);font-size:14px;padding:8px 0;">No blocking questions.</div>';
+      } else {
+        blockingQs.forEach(function(q) {
+          html += '<div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer;" onclick="switchToQuestion(\'' + escapeHtml(q.scope) + '\')">';
+          html += '<div style="display:flex;align-items:center;gap:8px;">';
+          html += '<span class="q-id" style="color:var(--accent);font-weight:600;font-size:14px;">' + escapeHtml(q.id) + '</span>';
+          html += ageBadge(q);
+          html += '<span style="font-size:13px;color:var(--text-secondary);">' + escapeHtml(q.owner) + '</span>';
+          html += '</div>';
+          html += '<div style="font-size:14px;margin-top:4px;">' + escapeHtml(truncate(q.question, 100)) + '</div>';
+          if (q.blocks) {
+            html += '<div style="font-size:13px;color:var(--danger);margin-top:2px;">Blocks: ' + escapeHtml(q.blocks) + '</div>';
+          }
+          html += '</div>';
+        });
+      }
+      html += '</div>';
+      html += '</div>';
+
+      // Recently Resolved
+      if (answeredRecent.length > 0) {
+        html += '<div class="section-title">Recently Resolved</div>';
+        html += '<div class="resolved-row">';
+        answeredRecent.forEach(function(q) {
+          html += '<div class="resolved-card">';
+          html += '<div class="resolved-id">' + escapeHtml(q.id) + '</div>';
+          html += '<div class="resolved-date">Answered ' + escapeHtml(q.answeredDate) + '</div>';
+          html += '<div class="resolved-answer">' + escapeHtml(truncate(q.answer, 120)) + '</div>';
+          if (q.impact) {
+            html += '<div class="resolved-impact">' + escapeHtml(truncate(q.impact, 80)) + '</div>';
+          }
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Epic Status
+      if (epics.length > 0) {
+        html += '<div class="section-title">Epic Status</div>';
+        epics.forEach(function(epic) {
+          var total = questions.filter(function(q) { return q.scope === epic.name; }).length;
+          var answered = questions.filter(function(q) { return q.scope === epic.name && q.status === 'Answered'; }).length;
+          var pct = total > 0 ? Math.round(answered / total * 100) : 0;
+          html += '<div class="epic-progress-item">';
+          html += '<div class="epic-progress-header">';
+          html += '<span>' + escapeHtml(epic.name) + '</span>';
+          html += '<span>' + pct + '%</span>';
+          html += '</div>';
+          html += '<span class="epic-phase-label">' + escapeHtml(epic.phase || '') + '</span>';
+          html += '<div class="progress-bar" style="margin-top:4px;"><div class="fill" style="width:' + pct + '%;background:var(--accent);"></div></div>';
+          html += '</div>';
+        });
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    function statCard(label, value, detail, color) {
+      var html = '<div class="stat-card">';
+      html += '<div class="stat-label">' + escapeHtml(label) + '</div>';
+      html += '<div class="stat-value"' + (color ? ' style="color:' + color + ';"' : '') + '>' + escapeHtml(String(value)) + '</div>';
+      html += '<div class="stat-detail">' + detail + '</div>';
+      html += '</div>';
+      return html;
+    }
+
+    function computeFocus(questions) {
+      var openQs = questions.filter(function(q) { return q.status === 'Open'; });
+      var blocked = (state.executionPlan && state.executionPlan.blockedItems) || [];
+      var signals = (state.health && state.health.signals) || [];
+      var thresholds = (state.config && state.config.risk_thresholds) || {};
+
+      var criticalItems = blocked.filter(function(b) { return b.type === 'Question'; }).map(function(b) { return b.blockedBy; });
+      var staleClientIds = signals.filter(function(s) { return s.type === 'stale_client_question'; }).map(function(s) { return s.id; });
+      var staleIds = signals.filter(function(s) { return s.type === 'stale_question'; }).map(function(s) { return s.id; });
+
+      var scored = openQs.map(function(q) {
+        var score = 0;
+        var reasons = [];
+        var isBlocking = !!q.blocks;
+        var isCritical = criticalItems.indexOf(q.id) >= 0;
+        var isStaleClient = staleClientIds.indexOf(q.id) >= 0;
+        var isStale = staleIds.indexOf(q.id) >= 0;
+
+        if (isBlocking && isCritical) { score = 100; reasons.push('blocking critical path'); }
+        else if (isBlocking && isStaleClient) { score = 80; reasons.push('blocking, stale client question'); }
+        else if (isBlocking && isStale) { score = 60; reasons.push('blocking, stale'); }
+        else if (isBlocking) { score = 40; reasons.push('blocking work'); }
+        else if (isStaleClient) { score = 20; reasons.push('stale client question'); }
+
+        return { q: q, score: score, reasons: reasons };
+      }).filter(function(item) { return item.score > 0; });
+
+      scored.sort(function(a, b) { return b.score - a.score; });
+
+      return scored.slice(0, 3).map(function(item) {
+        return {
+          text: item.q.id + ': ' + truncate(item.q.question, 80) + ' (' + item.reasons.join(', ') + ')'
+        };
+      });
+    }
+
+    function switchToQuestion(scope) {
+      questionFilters.scope = scope;
+      questionFilters.status = 'all';
+      switchPanel('questions');
+    }
+
+    /* ========================================
+       Panel: Questions
+       ======================================== */
+    function renderQuestions() {
+      var questions = state.questions || [];
+      var config = state.config || {};
+      var epics = config.epics || [];
+
+      var openCount = questions.filter(function(q) { return q.status === 'Open'; }).length;
+      var answeredCount = questions.filter(function(q) { return q.status === 'Answered'; }).length;
+      var parkedCount = questions.filter(function(q) { return q.status === 'Parked'; }).length;
+
+      // Apply filters
+      var filtered = questions.filter(function(q) {
+        // Status filter
+        var sf = questionFilters.status;
+        if (sf !== 'all') {
+          if (sf === 'open' && q.status !== 'Open') return false;
+          if (sf === 'answered' && q.status !== 'Answered') return false;
+          if (sf === 'parked' && q.status !== 'Parked') return false;
+          if (sf === 'blocking' && !q.blocks) return false;
+          if (sf === 'client-owned' && !(q.owner || '').toLowerCase().startsWith('client')) return false;
+          if (sf === 'stale') {
+            var threshold = (config.risk_thresholds && config.risk_thresholds.question_age_days) || 7;
+            if (q.status !== 'Open' || daysSince(q.asked) < threshold) return false;
+          }
+        }
+        // Scope filter
+        if (questionFilters.scope !== 'all' && q.scope !== questionFilters.scope) return false;
+        return true;
+      });
+
+      // Group by scope
+      var groups = {};
+      filtered.forEach(function(q) {
+        var scope = q.scope || 'Other';
+        if (!groups[scope]) groups[scope] = [];
+        groups[scope].push(q);
+      });
+
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>Questions</h1>';
+      html += '<div class="subtitle">' + openCount + ' open, ' + answeredCount + ' answered, ' + parkedCount + ' parked</div>';
+      html += '</div>';
+      html += '<button class="btn btn-accent" onclick="showRaiseModal()">+ Raise Question</button>';
+      html += '</div>';
+
+      // Filter bar: status
+      html += '<div class="filter-bar">';
+      var statusFilters = [
+        { key: 'all', label: 'All' },
+        { key: 'open', label: 'Open' },
+        { key: 'blocking', label: 'Blocking' },
+        { key: 'client-owned', label: 'Client-Owned' },
+        { key: 'stale', label: 'Stale' },
+        { key: 'answered', label: 'Answered' },
+        { key: 'parked', label: 'Parked' }
+      ];
+      statusFilters.forEach(function(f) {
+        html += '<button class="filter-btn' + (questionFilters.status === f.key ? ' active' : '') + '" onclick="setQuestionFilter(\'status\',\'' + f.key + '\')">' + f.label + '</button>';
+      });
+      html += '<span style="width:1px;background:var(--border);margin:0 4px;"></span>';
+      // Scope filters
+      html += '<button class="filter-btn' + (questionFilters.scope === 'all' ? ' active' : '') + '" onclick="setQuestionFilter(\'scope\',\'all\')">All Scopes</button>';
+      html += '<button class="filter-btn' + (questionFilters.scope === 'Engagement' ? ' active' : '') + '" onclick="setQuestionFilter(\'scope\',\'Engagement\')">Engagement</button>';
+      epics.forEach(function(e) {
+        html += '<button class="filter-btn' + (questionFilters.scope === e.name ? ' active' : '') + '" onclick="setQuestionFilter(\'scope\',\'' + escapeHtml(e.name) + '\')">' + escapeHtml(e.name) + '</button>';
+      });
+      html += '</div>';
+
+      // Question list grouped by scope
+      var scopeKeys = Object.keys(groups);
+      if (scopeKeys.length === 0) {
+        html += '<div style="text-align:center;color:var(--text-secondary);padding:40px 0;">No questions match the current filters.</div>';
+      } else {
+        scopeKeys.forEach(function(scope) {
+          var epic = epics.find(function(e) { return e.name === scope; });
+          var prefix = epic ? epic.prefix : 'ENG';
+
+          html += '<div class="scope-header">';
+          html += '<h3>' + escapeHtml(scope) + '</h3>';
+          html += '<span class="scope-badge">' + escapeHtml(prefix) + '</span>';
+          html += '</div>';
+
+          groups[scope].forEach(function(q) {
+            html += renderQuestionCard(q);
+          });
+        });
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    function renderQuestionCard(q) {
+      var isOpen = q.status === 'Open';
+      var isAnswered = q.status === 'Answered';
+      var isExpanded = expandedQuestion === q.id;
+      var idColor = isOpen ? 'var(--accent)' : (isAnswered ? 'var(--success)' : 'var(--text-secondary)');
+
+      var html = '<div class="question-card" onclick="toggleQuestionExpand(\'' + escapeHtml(q.id) + '\')">';
+
+      // Header row
+      html += '<div class="q-header">';
+      html += '<span class="q-id" style="color:' + idColor + ';">' + escapeHtml(q.id) + '</span>';
+      html += ageBadge(q);
+      if (isOpen && q.blocks) {
+        html += '<span class="badge badge-danger">Blocking</span>';
+      }
+      html += '</div>';
+
+      // Question text
+      html += '<div class="q-text">' + escapeHtml(q.question) + '</div>';
+
+      // Meta row
+      html += '<div class="q-meta">';
+      html += '<span>&#x1F464; ' + escapeHtml(q.owner) + '</span>';
+      html += '<span>&#x1F4C5; ' + escapeHtml(q.asked) + '</span>';
+      if (q.affects) {
+        html += '<span>&#x1F517; ' + escapeHtml(q.affects) + '</span>';
+      }
+      if (isOpen) {
+        html += '<button class="park-link" onclick="event.stopPropagation();parkQuestion(\'' + escapeHtml(q.id) + '\')">Park</button>';
+      }
+      html += '</div>';
+
+      // Blocks box
+      if (q.blocks) {
+        html += '<div class="blocks-box">';
+        html += '<div class="blocks-label">Blocks</div>';
+        html += escapeHtml(q.blocks);
+        html += '</div>';
+      }
+
+      // Answered: show answer
+      if (isAnswered && q.answer) {
+        html += '<div class="answer-box">';
+        html += '<div class="answer-label">Answer</div>';
+        html += '<div>' + escapeHtml(q.answer) + '</div>';
+        if (q.impact) {
+          html += '<ul class="impact-list"><li>' + escapeHtml(q.impact) + '</li></ul>';
+        }
+        html += '</div>';
+      }
+
+      // Expanded: answer form for open questions
+      if (isOpen && isExpanded) {
+        html += '<div class="answer-form" onclick="event.stopPropagation()">';
+        html += '<div class="form-label">Record Answer</div>';
+        html += '<textarea id="answer-text-' + escapeHtml(q.id) + '" rows="3" placeholder="Type the answer here..." style="font-size:14px;"></textarea>';
+        html += '<div class="answer-form-actions">';
+        html += '<span class="hint-text">Dispatches to Claude for processing</span>';
+        html += '<div style="display:flex;gap:8px;">';
+        html += '<button class="btn" onclick="event.stopPropagation();expandedQuestion=null;render();">Cancel</button>';
+        html += '<button class="btn btn-accent" onclick="event.stopPropagation();submitAnswer(\'' + escapeHtml(q.id) + '\')">Submit to Claude</button>';
+        html += '</div>';
+        html += '</div>';
+        html += '</div>';
+      }
+
+      html += '</div>';
+      return html;
+    }
+
+    function toggleQuestionExpand(id) {
+      expandedQuestion = expandedQuestion === id ? null : id;
+      render();
+    }
+
+    function setQuestionFilter(type, value) {
+      questionFilters[type] = value;
+      render();
+    }
+
+    function submitAnswer(questionId) {
+      var textEl = document.getElementById('answer-text-' + questionId);
+      var text = textEl ? textEl.value.trim() : '';
+      if (!text) return;
+      dispatch({
+        type: 'dispatch',
+        action: 'answer',
+        questionId: questionId,
+        filePath: '',
+        text: text
+      });
+      expandedQuestion = null;
+      render();
+    }
+
+    function parkQuestion(questionId) {
+      var reason = prompt('Reason for parking this question:');
+      if (!reason) return;
+      dispatch({
+        type: 'dispatch',
+        action: 'park',
+        questionId: questionId,
+        filePath: '',
+        reason: reason
+      });
+    }
+
+    function showRaiseModal() {
+      var config = state.config || {};
+      var epics = config.epics || [];
+
+      var html = '<div class="modal-overlay" onclick="closeModal(event)">';
+      html += '<div class="modal-content" onclick="event.stopPropagation()">';
+      html += '<h2>Raise a Question</h2>';
+
+      html += '<div class="form-group">';
+      html += '<label>Scope</label>';
+      html += '<select id="raise-scope">';
+      html += '<option value="Engagement">Engagement</option>';
+      epics.forEach(function(e) {
+        html += '<option value="' + escapeHtml(e.name) + '">' + escapeHtml(e.name) + '</option>';
+      });
+      html += '</select>';
+      html += '</div>';
+
+      html += '<div class="form-group">';
+      html += '<label>Question</label>';
+      html += '<textarea id="raise-text" rows="3" placeholder="What needs to be answered?"></textarea>';
+      html += '</div>';
+
+      html += '<div class="form-group">';
+      html += '<label>Owner</label>';
+      html += '<select id="raise-owner">';
+      html += '<option value="Us">Us</option>';
+      html += '<option value="Client">Client</option>';
+      html += '</select>';
+      html += '</div>';
+
+      html += '<div class="form-group">';
+      html += '<label>Blocks (optional)</label>';
+      html += '<input type="text" id="raise-blocks" placeholder="What does this block?">';
+      html += '</div>';
+
+      html += '<div class="modal-actions">';
+      html += '<button class="btn" onclick="closeModal()">Cancel</button>';
+      html += '<button class="btn btn-accent" onclick="submitRaise()">Raise Question</button>';
+      html += '</div>';
+
+      html += '</div>';
+      html += '</div>';
+
+      document.getElementById('modal-container').innerHTML = html;
+    }
+
+    function closeModal(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('modal-container').innerHTML = '';
+    }
+
+    function submitRaise() {
+      var scope = document.getElementById('raise-scope').value;
+      var text = document.getElementById('raise-text').value.trim();
+      var owner = document.getElementById('raise-owner').value;
+      var blocks = document.getElementById('raise-blocks').value.trim();
+      if (!text) return;
+      dispatch({
+        type: 'dispatch',
+        action: 'raise',
+        scope: scope,
+        text: text,
+        owner: owner,
+        blocks: blocks
+      });
+      closeModal();
+    }
+
+    /* ========================================
+       Panel: Execution
+       ======================================== */
+    function renderExecution() {
+      var ep = state.executionPlan || {};
+      var phasing = ep.epicPhasing || [];
+      var taskTables = ep.taskTables || {};
+      var blockedItems = ep.blockedItems || [];
+
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>Execution Plan</h1>';
+      html += '<div class="subtitle">' + phasing.length + ' phases, ' + blockedItems.length + ' blocked items</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Phase overview cards
+      html += '<div class="phase-cards">';
+      phasing.forEach(function(p) {
+        var s = (p.status || '').toLowerCase();
+        var cls = 'not-started';
+        if (s === 'complete' || s === 'completed' || s === 'done') cls = 'complete';
+        else if (s === 'in progress') cls = 'in-progress';
+        else if (s === 'blocked') cls = 'blocked';
+
+        html += '<div class="phase-card ' + cls + '">';
+        html += '<div class="phase-num">Phase ' + escapeHtml(p.phase) + '</div>';
+        html += '<div class="phase-epic">' + escapeHtml(p.epic) + '</div>';
+        html += '<div class="phase-status ' + statusClass(p.status) + '">' + escapeHtml(p.status) + '</div>';
+        html += '</div>';
+      });
+      html += '</div>';
+
+      // Task tables per epic
+      var epicNames = Object.keys(taskTables);
+      epicNames.forEach(function(epicName) {
+        var tasks = taskTables[epicName] || [];
+        html += '<div style="margin-bottom:20px;">';
+        html += '<div class="collapsible-header open" onclick="toggleCollapsible(this)">';
+        html += '<span class="toggle-icon">&#x25B6;</span> ' + escapeHtml(epicName) + ' (' + tasks.length + ' tasks)';
+        html += '</div>';
+        html += '<div class="collapsible-body open">';
+        html += '<table class="data-table">';
+        html += '<thead><tr><th>#</th><th>Task</th><th>Story</th><th>Depends On</th><th>Linear</th><th>Status</th></tr></thead>';
+        html += '<tbody>';
+        tasks.forEach(function(t) {
+          html += '<tr>';
+          html += '<td>' + escapeHtml(t.order) + '</td>';
+          html += '<td>' + escapeHtml(t.task) + '</td>';
+          html += '<td>' + escapeHtml(t.story) + '</td>';
+          html += '<td>' + escapeHtml(t.dependsOn) + '</td>';
+          html += '<td>' + escapeHtml(t.linearIssue) + '</td>';
+          html += '<td class="' + statusClass(t.status) + '">' + escapeHtml(t.status) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+        html += '</div>';
+        html += '</div>';
+      });
+
+      // Blocked items
+      if (blockedItems.length > 0) {
+        html += '<div class="blocked-section">';
+        html += '<h3>Blocked Items</h3>';
+        blockedItems.forEach(function(b) {
+          html += '<div style="padding:8px 0;border-bottom:1px solid rgba(248,113,113,0.1);">';
+          html += '<div style="font-weight:500;">' + escapeHtml(b.item) + '</div>';
+          html += '<div style="font-size:13px;color:var(--text-secondary);">';
+          html += 'Blocked by: ' + escapeHtml(b.blockedBy) + ' (' + escapeHtml(b.type) + ')';
+          html += ' &middot; Owner: ' + escapeHtml(b.owner);
+          html += ' &middot; Since: ' + escapeHtml(b.since) + ' (' + daysSince(b.since) + ' days)';
+          html += '</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    function toggleCollapsible(el) {
+      el.classList.toggle('open');
+      var body = el.nextElementSibling;
+      if (body) body.classList.toggle('open');
+    }
+
+    /* ========================================
+       Panel: Risks
+       ======================================== */
+    function renderRisks() {
+      var health = state.health || {};
+      var signals = health.signals || [];
+      var risks = state.risks || [];
+      var color = healthColor();
+
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>Health &amp; Risks</h1>';
+      html += '<div class="subtitle">' + signals.length + ' active signals, ' + risks.length + ' registered risks</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Large health badge
+      html += '<div class="health-badge-lg card">';
+      html += '<div class="health-icon">' + healthEmoji() + '</div>';
+      html += '<div class="health-label" style="color:var(--' + (color === 'green' ? 'success' : color === 'yellow' ? 'warning' : 'danger') + ');">' + healthLabel() + '</div>';
+      if (signals.length > 0) {
+        html += '<div class="health-count">' + signals.length + ' signal' + (signals.length === 1 ? '' : 's') + ' detected</div>';
+      }
+      html += '</div>';
+
+      // Risk signals
+      if (signals.length > 0) {
+        html += '<div class="section-title">Active Signals</div>';
+        signals.forEach(function(s) {
+          var overBy = s.days - s.threshold;
+          var pct = Math.min(Math.round(s.days / s.threshold * 100), 200);
+          html += '<div class="signal-card">';
+          html += '<div class="signal-type">' + signalTypeLabel(s.type) + '</div>';
+          html += '<div class="signal-detail">' + escapeHtml(s.id) + ': ' + s.days + ' days (threshold: ' + s.threshold + ' days, over by ' + overBy + ')</div>';
+          html += '<div class="progress-bar" style="height:8px;">';
+          html += '<div class="fill" style="width:' + Math.min(pct, 100) + '%;background:' + (pct > 100 ? 'var(--danger)' : 'var(--warning)') + ';"></div>';
+          html += '</div>';
+          html += '</div>';
+        });
+      }
+
+      // Risk register table
+      if (risks.length > 0) {
+        html += '<div class="section-title" style="margin-top:24px;">Risk Register</div>';
+        html += '<table class="data-table">';
+        html += '<thead><tr><th>ID</th><th>Risk</th><th>Likelihood</th><th>Impact</th><th>Affects</th><th>Mitigation</th></tr></thead>';
+        html += '<tbody>';
+        risks.forEach(function(r) {
+          var lClass = 'likelihood-' + (r.likelihood || '').toLowerCase();
+          var iClass = 'impact-' + (r.impact || '').toLowerCase();
+          html += '<tr>';
+          html += '<td>' + escapeHtml(r.id) + '</td>';
+          html += '<td>' + escapeHtml(r.risk) + '</td>';
+          html += '<td class="' + lClass + '">' + escapeHtml(r.likelihood) + '</td>';
+          html += '<td class="' + iClass + '">' + escapeHtml(r.impact) + '</td>';
+          html += '<td>' + escapeHtml(r.affects) + '</td>';
+          html += '<td>' + escapeHtml(r.mitigation) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    /* ========================================
+       Panel: Roadmap
+       ======================================== */
+    function renderRoadmap() {
+      var rm = state.roadmap || {};
+      var milestones = rm.milestones || [];
+      var grid = rm.epicPhaseGrid || [];
+
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>Roadmap</h1>';
+      html += '<div class="subtitle">' + milestones.length + ' milestones</div>';
+      html += '</div>';
+      html += '</div>';
+
+      // Milestone table
+      if (milestones.length > 0) {
+        html += '<div class="section-title">Milestones</div>';
+        html += '<table class="data-table">';
+        html += '<thead><tr><th>Milestone</th><th>Target Date</th><th>Status</th><th>Progress</th></tr></thead>';
+        html += '<tbody>';
+        milestones.forEach(function(m) {
+          var pct = parsePercent(m.percentComplete);
+          html += '<tr>';
+          html += '<td>' + escapeHtml(m.milestone) + '</td>';
+          html += '<td>' + escapeHtml(m.targetDate) + '</td>';
+          html += '<td class="' + statusClass(m.status) + '">' + escapeHtml(m.status) + '</td>';
+          html += '<td><div class="mini-progress">';
+          html += '<div class="progress-bar"><div class="fill" style="width:' + pct + '%;background:var(--accent);"></div></div>';
+          html += '<span class="pct">' + pct + '%</span>';
+          html += '</div></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+
+      // Epic phase grid
+      if (grid.length > 0) {
+        html += '<div class="section-title" style="margin-top:24px;">Epic Phase Grid</div>';
+        var phases = ['discovery', 'design', 'build', 'test', 'deploy'];
+        html += '<table class="phase-grid">';
+        html += '<thead><tr><th>Epic</th>';
+        phases.forEach(function(p) {
+          html += '<th>' + p.charAt(0).toUpperCase() + p.slice(1) + '</th>';
+        });
+        html += '</tr></thead>';
+        html += '<tbody>';
+        grid.forEach(function(row) {
+          html += '<tr>';
+          html += '<td style="text-align:left;font-weight:500;">' + escapeHtml(row.epic) + '</td>';
+          phases.forEach(function(p) {
+            var val = row[p] || '--';
+            var cls = '';
+            var lower = val.toLowerCase();
+            if (lower === 'complete' || lower === 'completed') cls = 'complete-phase';
+            else if (lower === 'in progress') cls = 'active-phase';
+            else if (lower === '--') cls = 'future-phase';
+            var display = lower === 'complete' || lower === 'completed' ? '&#x2705;' : escapeHtml(val);
+            html += '<td class="' + cls + '">' + display + '</td>';
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
+      }
+
+      // Current focus
+      if (rm.currentFocus) {
+        html += '<div class="section-title" style="margin-top:24px;">Current Focus</div>';
+        html += '<div class="quoted-text">' + escapeHtml(rm.currentFocus) + '</div>';
+      }
+
+      // Upcoming milestones
+      if (rm.upcomingMilestones) {
+        html += '<div class="section-title" style="margin-top:16px;">Upcoming</div>';
+        html += '<ul style="padding-left:18px;font-size:14px;color:var(--text-secondary);"><li>' + escapeHtml(rm.upcomingMilestones) + '</li></ul>';
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    /* ========================================
+       Panel: Activity
+       ======================================== */
+    function renderActivity() {
+      var html = '';
+
+      // Header
+      html += '<div class="panel-header">';
+      html += '<div>';
+      html += '<h1>Activity Feed</h1>';
+      html += '<div class="subtitle">' + activityFeed.length + ' dispatched actions</div>';
+      html += '</div>';
+      html += '</div>';
+
+      if (activityFeed.length === 0) {
+        html += '<div style="text-align:center;color:var(--text-secondary);padding:60px 0;">No dispatched actions yet. Use the Questions panel to submit answers or raise questions.</div>';
+      } else {
+        activityFeed.forEach(function(entry) {
+          var actionLabel = entry.action.charAt(0).toUpperCase() + entry.action.slice(1);
+          var badgeCls = 'badge-accent';
+          if (entry.action === 'raise') badgeCls = 'badge-success';
+          else if (entry.action === 'park') badgeCls = 'badge-warning';
+
+          var statusIcon = entry.exitCode === 0 ? '&#x2705;' : '&#x274C;';
+
+          html += '<div class="activity-entry">';
+          html += '<div class="activity-header">';
+          html += '<span class="activity-time">' + relativeTime(entry.timestamp) + '</span>';
+          html += '<span class="badge ' + badgeCls + '">' + actionLabel + '</span>';
+          html += '<span>' + statusIcon + '</span>';
+          html += '</div>';
+          html += '<div class="activity-summary">' + escapeHtml(actionLabel) + ' ' + escapeHtml(entry.questionId) + '</div>';
+          if (entry.response) {
+            html += '<div class="activity-response">' + simpleMarkdown(entry.response) + '</div>';
+          }
+          html += '</div>';
+        });
+      }
+
+      document.getElementById('main-content').innerHTML = html;
+    }
+
+    /* ========================================
+       Toast Notifications
+       ======================================== */
+    function showToast(type, text) {
+      var container = document.getElementById('toast-container');
+      var toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+
+      var content = '';
+      if (type === 'pending') {
+        content = '<span class="spinner"></span> ' + text;
+        toast.dataset.pending = 'true';
+      } else if (type === 'success') {
+        content = '&#x2705; ' + text;
+      } else {
+        content = '&#x274C; ' + text;
+      }
+      toast.innerHTML = content;
+
+      // Click to navigate to activity
+      if (type !== 'pending') {
+        toast.onclick = function() {
+          switchPanel('activity');
+          toast.remove();
+        };
+      }
+
+      container.appendChild(toast);
+
+      // Auto-dismiss success after 5 seconds
+      if (type === 'success') {
+        setTimeout(function() {
+          if (toast.parentNode) toast.remove();
+        }, 5000);
+      }
+    }
+
+    function dismissPendingToasts() {
+      var container = document.getElementById('toast-container');
+      var pending = container.querySelectorAll('.toast.pending');
+      pending.forEach(function(t) { t.remove(); });
+    }
+
+    /* ========================================
+       Initialization
+       ======================================== */
+    document.addEventListener('DOMContentLoaded', function() {
+      loadTheme();
+      connect();
+    });
+  </script>
+</body>
+</html>
