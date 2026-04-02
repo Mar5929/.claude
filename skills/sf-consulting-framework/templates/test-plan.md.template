@@ -1,0 +1,55 @@
+# Test Plan — {Epic Name}
+
+**Last updated:** YYYY-MM-DD
+**Epic:** {Epic name and prefix}
+**Phase:** {Design / Build / Test}
+
+---
+
+## Test Scenarios
+
+<!-- Group by user story. Each scenario traces back to a requirement. -->
+
+### {PREFIX-US-XXX}: {Story title}
+
+**Requirements covered:** {REQ-XXX, REQ-YYY}
+
+| # | Scenario | Steps | Expected Result | Status | Notes |
+|---|----------|-------|-----------------|--------|-------|
+| 1 | {Scenario name} | {Step-by-step actions} | {What should happen} | {Not Run / Pass / Fail} | {Detail} |
+
+---
+
+## Edge Cases
+
+Derived from questions and decisions captured during discovery and design.
+
+| Source | Scenario | Expected Behavior | Status |
+|--------|----------|-------------------|--------|
+| {Q-XX-YYY or D-XX-YYY} | {Edge case description} | {How the system should handle it} | {Not Run / Pass / Fail} |
+
+---
+
+## Test Data Requirements
+
+| Data | Source | Setup Steps | Notes |
+|------|--------|-------------|-------|
+| {What data is needed} | {Where it comes from} | {How to set it up} | {Constraints} |
+
+---
+
+## UAT Script
+
+Maps each test to the requirement it validates, for client sign-off.
+
+| Test # | Requirement | Description | Result | Signed Off By |
+|--------|-------------|-------------|--------|---------------|
+| 1 | {REQ-XXX} | {What is being validated} | {Pass / Fail / N/A} | {Name and date} |
+
+---
+
+## Defects Found
+
+| # | Severity | Description | Story | Status | Resolution |
+|---|----------|-------------|-------|--------|------------|
+| 1 | {Critical / High / Medium / Low} | {What happened} | {PREFIX-US-XXX} | {Open / Fixed / Won't Fix} | {How it was resolved} |

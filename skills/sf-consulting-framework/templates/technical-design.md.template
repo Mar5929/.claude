@@ -1,0 +1,29 @@
+# Technical Design: {Epic Name}
+
+**Last updated:** YYYY-MM-DD
+**Phase:** {Discovery / Design / Build}
+**Status:** {Draft / In Review / Approved}
+
+## Overview
+{What this design covers and the high-level approach}
+
+## Current State
+{Relevant current state specific to this epic: existing objects, processes, data}
+
+## Proposed Approach
+{The technical approach. How we're going to build this.}
+
+## Data Model Changes
+{New objects, new fields, modified relationships, deleted fields}
+
+## Process & Automation
+{Flows, triggers, batch jobs, scheduled jobs: what runs, when, why}
+
+## Migration / Data Considerations
+{Data mapping, transformation rules, volume considerations, rollback strategy}
+
+## Testing Approach
+{How we validate this works: test scenarios, acceptance criteria at the epic level}
+
+## Open Questions
+{Questions specific to this design that need answers before it can be finalized. These should also be tracked in the epic's questions.md.}

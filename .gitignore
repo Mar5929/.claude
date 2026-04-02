@@ -1,0 +1,18 @@
+# Ignore everything by default
+*
+
+# Track these
+!.gitignore
+!CLAUDE.md
+!agents/
+!agents/**
+!commands/
+!commands/**
+!hooks/
+!hooks/**
+!rules/
+!rules/**
+!skills/
+!skills/**
+!templates/
+!templates/**

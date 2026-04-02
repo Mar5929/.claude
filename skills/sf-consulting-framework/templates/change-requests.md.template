@@ -1,0 +1,31 @@
+# Change Requests — {Client Name}
+
+**Last updated:** YYYY-MM-DD
+
+Tracks scope changes identified after the original engagement scope was defined. Each change request documents what changed, why, and the impact on timeline and effort.
+
+---
+
+<!-- Change request format:
+
+### CR-{NUMBER}
+**Identified:** YYYY-MM-DD
+**Source:** {Who or what triggered this: client request, discovery finding, design decision}
+**Status:** {Identified / Under Review / Approved / Rejected / Implemented}
+
+**Change:** {What is being added, removed, or modified relative to the original scope}
+
+**Rationale:** {Why this change is being proposed}
+
+**Impact Assessment:**
+- **Effort:** {Estimated additional hours or story points}
+- **Timeline:** {Days added, milestones affected}
+- **Risk:** {New risks introduced or existing risks changed}
+- **Affected epics:** {Which epics are impacted}
+
+**Decision:** {Approved/Rejected by whom, on what date, with what conditions}
+
+---
+-->
+
+(No change requests yet)

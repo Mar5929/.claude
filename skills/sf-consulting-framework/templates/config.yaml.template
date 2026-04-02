@@ -1,0 +1,28 @@
+client: {Client Name}
+engagement: {Engagement Description}
+consulting_firm: {Your Firm}
+start_date: YYYY-MM-DD
+target_end_date: YYYY-MM-DD
+current_phase: Discovery
+primary_contact:
+  name: {Name}
+  role: {Role}
+  notes: {Any relevant context about this person}
+stakeholders:
+  - name: {Name}
+    role: {Role}
+    type: client  # client | internal | vendor
+    notes: {Communication preferences, key concerns}
+epics:
+  - id: {epic-slug}
+    name: {Epic Display Name}
+    prefix: {2-4 letter prefix for question IDs}
+  - id: {epic-slug}
+    name: {Epic Display Name}
+    prefix: {2-4 letter prefix}
+# Operational tracking
+last_status_report: null  # YYYY-MM-DD, updated by /status-report
+risk_thresholds:
+  question_age_days: 7       # Flag questions open longer than this
+  blocked_item_days: 5       # Flag tasks blocked longer than this
+  follow_up_stale_days: 3    # Flag client-owned items with no activity

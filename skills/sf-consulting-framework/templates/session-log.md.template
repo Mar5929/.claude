@@ -1,0 +1,28 @@
+# Session Log
+
+Append-only record of work sessions. Each entry captures what happened, what changed, and what to pick up next. The morning briefing shows project state; the session log captures momentum.
+
+---
+
+<!-- Session entry format:
+
+## {YYYY-MM-DD} — Session {N}
+
+**Duration:** {approximate session length}
+
+### What Happened
+- {Summary of work done: questions raised/answered, decisions made, designs updated, stories created, etc.}
+
+### Files Changed
+- `{path}` — {what changed}
+
+### Loose Ends
+- {Anything left incomplete: questions raised but not yet owned, decisions not yet reflected in designs, action items not converted to tasks}
+
+### Pick Up Next
+- {Specific next steps for the next session, prioritized}
+
+---
+-->
+
+(No sessions logged yet)

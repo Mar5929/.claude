@@ -1,0 +1,36 @@
+# Solution Design: {Client Name}
+
+**Last updated:** YYYY-MM-DD
+**Phase:** {Discovery / Design / Build}
+
+## Current State
+
+### Org Architecture
+{High-level description of the current Salesforce org: what exists, how it's structured, key data flows}
+
+### Pain Points & Gaps
+{What's broken, missing, or inefficient that this engagement is solving}
+
+## Target State
+
+### End-State Architecture
+{What the org looks like when this engagement is complete. The "after" picture.}
+
+### Key Changes from Current State
+{Summary of the major changes: new objects, modified processes, new integrations, retired components}
+
+## Epic Relationships
+
+{How the epics relate to and depend on each other. Which ones must happen first, which can run in parallel, and why.}
+
+### Data Flow
+{How data moves through the system in the target state: between objects, between Salesforce and external systems, between business processes}
+
+### Integration Points
+{All external systems that touch Salesforce, what data moves, and in which direction}
+
+## Assumptions
+{Key assumptions the design is built on. If any of these prove false, the design needs revisiting.}
+
+## Open Design Questions
+{High-level questions that affect the overall architecture, not just a single epic. These should also be tracked in engagement/questions.md.}

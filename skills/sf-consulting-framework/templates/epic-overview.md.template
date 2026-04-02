@@ -1,0 +1,17 @@
+# {Epic Name}
+
+**Prefix:** {2-4 letter prefix for question/story IDs}
+**Phase:** {Discovery / Design / Build / Test / Deploy}
+**Status:** {Current status summary}
+
+## Scope
+{What this epic covers and why it exists}
+
+## Dependencies
+{What other epics or external factors this epic depends on}
+
+## Key Constraints
+{Anything that limits how we can approach this: timeline, licensing, data volume, etc.}
+
+## Out of Scope
+{Explicitly what this epic does NOT cover, to prevent scope creep}

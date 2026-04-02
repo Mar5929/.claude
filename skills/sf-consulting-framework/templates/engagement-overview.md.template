@@ -1,0 +1,32 @@
+# {Client Name}: Engagement Overview
+
+## About the Client
+
+{Who is the client? What do they do? What industry are they in? How do they make money?}
+
+## Salesforce Org
+
+- **Tenure:** {How long on Salesforce}
+- **Edition/Clouds:** {Which Salesforce products: Sales Cloud, Service Cloud, FSC, etc.}
+- **Tech debt:** {Overall org health: clean, moderate, significant}
+
+### Key Objects
+{List the key standard and custom objects and what they represent in this client's context}
+
+### Key Tools & Integrations
+{List installed packages, third-party tools, integrations, and what they do}
+
+## Current Business Processes
+{Describe the key business processes that Salesforce supports. How do users actually use the system day-to-day?}
+
+## Scope Summary
+{Brief overview of what this engagement covers: list the epics with one-line descriptions. Detailed scope lives in each epic's overview.}
+
+## Key Stakeholders
+
+| Name | Role | Notes |
+|------|------|-------|
+| {Name} | {Role} | {Relevant context} |
+
+## Previous Partner / Historical Context
+{If there was a previous consulting partner, what did they do? What is the state of their work? Any other relevant history.}

@@ -1,0 +1,37 @@
+# Status Report — {Client Name}
+
+**Period:** {Start Date} to {End Date}
+**Prepared:** {Date}
+**Prepared by:** {Consultant Name}
+
+---
+
+## Accomplishments
+
+- {What was completed since the last report, in business language}
+
+## Current Focus
+
+- {What is actively being worked on right now}
+
+## Items Needing Client Input
+
+| Item | Context | Impact if Delayed |
+|------|---------|-------------------|
+| {Plain-language description} | {Why we need this} | {What gets blocked} |
+
+## Upcoming Milestones
+
+| Milestone | Target Date | Status | Notes |
+|-----------|-------------|--------|-------|
+| {Milestone} | {Date} | {On Track / At Risk / Delayed} | {Brief note} |
+
+## Risks & Concerns
+
+| Risk | Likelihood | Impact | Mitigation |
+|------|-----------|--------|------------|
+| {Risk in business language} | {Low/Med/High} | {Low/Med/High} | {What we are doing about it} |
+
+## Next Steps
+
+- {What will happen between now and the next report}

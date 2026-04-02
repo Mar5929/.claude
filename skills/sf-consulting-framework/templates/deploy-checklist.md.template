@@ -1,0 +1,59 @@
+# Deployment Checklist — {Epic Name}
+
+**Date:** YYYY-MM-DD
+**Target environment:** {Sandbox / Production}
+**Epic:** {Epic name and prefix}
+
+---
+
+## Pre-Deployment Readiness
+
+### Requirements Coverage
+
+| Requirement | Status | Notes |
+|-------------|--------|-------|
+| {REQ-XXX: summary} | {Met / Partial / Not Met} | {Detail} |
+
+### Story Completion
+
+| Story | Status | Linear Ticket | Notes |
+|-------|--------|--------------|-------|
+| {PREFIX-US-XXX} | {Done / In Progress / Not Started} | {Ticket ID} | {Detail} |
+
+### Open Blockers
+
+| Item | Type | Owner | Impact |
+|------|------|-------|--------|
+| {Description} | {Question / Decision / Dependency} | {Who} | {What it blocks} |
+
+### Design Questions Resolved
+
+- [ ] All questions in `{epic}/questions.md` are answered or parked with rationale
+- [ ] All decisions are reflected in the technical design
+- [ ] No contradictory decisions flagged
+
+### Testing
+
+- [ ] Test plan exists and covers all acceptance criteria
+- [ ] Test scenarios executed and passing
+- [ ] Edge cases from Q&A history tested
+- [ ] UAT sign-off obtained
+
+### Technical Readiness
+
+- [ ] All metadata committed and reviewed
+- [ ] No uncommitted local changes
+- [ ] Test coverage meets threshold (85%+ for Apex)
+- [ ] No hardcoded IDs or environment-specific values
+
+---
+
+## Go / No-Go Assessment
+
+**Recommendation:** {GO / NO-GO / CONDITIONAL GO}
+
+**Conditions (if conditional):**
+- {What must be resolved before deployment}
+
+**Risks accepted (if go):**
+- {Any known issues being accepted for this deployment}

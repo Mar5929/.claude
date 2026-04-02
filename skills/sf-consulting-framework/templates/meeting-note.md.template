@@ -1,0 +1,37 @@
+# {Meeting Title}
+
+**Date:** YYYY-MM-DD
+**Attendees:** {List of attendees with roles}
+**Duration:** {Length}
+**Type:** {Kickoff / Discovery / Design Review / Status / Ad Hoc}
+
+## Agenda
+
+1. {Agenda item}
+2. {Agenda item}
+
+## Discussion Notes
+
+### {Topic 1}
+{Notes on what was discussed}
+
+### {Topic 2}
+{Notes on what was discussed}
+
+## Decisions Made
+
+- {Decision and rationale}
+
+## Action Items
+
+| Action | Owner | Due Date | Status |
+|--------|-------|----------|--------|
+| {Action} | {Person} | YYYY-MM-DD | Open |
+
+## Questions Raised
+
+- {Question and who needs to answer it}
+
+## Follow-Up
+
+- Next meeting: {Date and topic}

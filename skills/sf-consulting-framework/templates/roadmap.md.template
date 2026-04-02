@@ -1,0 +1,34 @@
+# Roadmap: {Client Name}
+
+**Last updated:** YYYY-MM-DD
+**Updated by:** Claude (auto-maintained)
+
+## Timeline
+
+| Milestone | Target Date | Status | % Complete |
+|-----------|-------------|--------|------------|
+| Discovery complete | YYYY-MM-DD | Not Started | 0% |
+| Design complete | YYYY-MM-DD | Not Started | 0% |
+| Build complete | YYYY-MM-DD | Not Started | 0% |
+| UAT complete | YYYY-MM-DD | Not Started | 0% |
+| Go-live | YYYY-MM-DD | Not Started | 0% |
+
+## Phase Status by Epic
+
+| Epic | Discovery | Design | Build | Test | Deploy |
+|------|-----------|--------|-------|------|--------|
+| {Epic name} | Not Started | -- | -- | -- | -- |
+
+## Current Focus
+
+{1-2 sentences on what the team is working on right now}
+
+## Upcoming Milestones
+
+{Next 2-3 milestones with dates and what must happen to hit them}
+
+## Changelog
+
+| Date | Change | Triggered By |
+|------|--------|-------------|
+| YYYY-MM-DD | Roadmap initialized | Engagement kickoff |

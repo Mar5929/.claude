@@ -1,0 +1,30 @@
+# {Client Name}: {Engagement Description}
+
+## Quick Context
+
+- **Client:** {Client Name}
+- **Engagement:** {One-line description}
+- **Consulting firm:** {Firm name}
+- **Timeline:** {Start date} to {Target end date}
+- **Current phase:** {Discovery / Design / Build / Test / Deploy}
+
+## Key Files
+
+| File | What It Contains |
+|------|-----------------|
+| `engagement/engagement-overview.md` | Full client context, org landscape, stakeholders |
+| `engagement/requirements.md` | Business requirements with traceability |
+| `engagement/execution-plan.md` | Phase ordering, dependencies, Linear references |
+| `engagement/roadmap.md` | High-level timeline, milestones, percent complete |
+| `engagement/architecture/solution-design.md` | Cross-epic solution architecture |
+| `.framework/config.yaml` | Project metadata and epic registry |
+
+## Epics
+
+| Epic | Prefix | Phase | Key Contact |
+|------|--------|-------|-------------|
+| {Epic name} | {PREFIX} | {Phase} | {Contact} |
+
+## Rules
+
+Behavioral rules for this project live in `.claude/rules/framework-rules.md`. Read that file for instructions on how to handle questions, decisions, transcript processing, Linear sync, and all other framework operations.

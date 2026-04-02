@@ -1,0 +1,58 @@
+# Project Handoff — {Client Name}
+
+**Prepared:** YYYY-MM-DD
+**Prepared by:** {Consultant Name}
+**Purpose:** {Who this is for: new team member, client admin, manager briefing, vacation coverage}
+
+---
+
+## Project Narrative
+
+{2-3 paragraph summary of the engagement: who the client is, what we are doing, why, and where we stand. Written for someone with zero prior context.}
+
+## Current State Summary
+
+| Epic | Phase | % Complete | Key Context |
+|------|-------|------------|-------------|
+| {Epic name} | {Phase} | {%} | {One-line status and any critical notes} |
+
+## Key Decisions and Their Rationale
+
+{List the most important decisions made during the engagement, why they were made, and what alternatives were considered. Focus on decisions that would be hard to reconstruct from the code alone.}
+
+| Decision | Date | Rationale | Impact |
+|----------|------|-----------|--------|
+| {What was decided} | {Date} | {Why} | {What it affected} |
+
+## Unresolved Issues
+
+| Issue | Type | Owner | Age | Impact | Context |
+|-------|------|-------|-----|--------|---------|
+| {Description} | {Question / Risk / Blocker} | {Who} | {Days open} | {What it affects} | {History and context} |
+
+## Institutional Knowledge
+
+{Things learned during the engagement that are not obvious from the code or documentation. Client preferences, political dynamics, technical quirks of the org, gotchas discovered during implementation.}
+
+## Stakeholder Guide
+
+| Person | Role | Communication Style | Key Concerns |
+|--------|------|-------------------|--------------|
+| {Name} | {Role} | {How to work with them} | {What they care about most} |
+
+## File Guide
+
+| File | What to Read It For |
+|------|-------------------|
+| `engagement/engagement-overview.md` | Full client and org context |
+| `engagement/requirements.md` | What the system must do |
+| `engagement/execution-plan.md` | What is being built and in what order |
+| `engagement/questions.md` | Open unknowns that need answers |
+| `engagement/risks.md` | Active risks and mitigations |
+| `engagement/session-log.md` | Recent work history and momentum |
+
+## Immediate Next Steps
+
+1. {Most important thing to do first}
+2. {Second priority}
+3. {Third priority}
