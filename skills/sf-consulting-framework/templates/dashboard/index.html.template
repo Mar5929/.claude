@@ -1431,7 +1431,7 @@
       var signals = (state.health && state.health.signals) || [];
       var thresholds = (state.config && state.config.risk_thresholds) || {};
 
-      var criticalItems = blocked.filter(function(b) { return b.type === 'Question'; }).map(function(b) { return b.blockedBy; });
+      var criticalItems = blocked.filter(function(b) { return b.Type === 'Question'; }).map(function(b) { return b['Blocked By']; });
       var staleClientIds = signals.filter(function(s) { return s.type === 'stale_client_question'; }).map(function(s) { return s.id; });
       var staleIds = signals.filter(function(s) { return s.type === 'stale_question'; }).map(function(s) { return s.id; });
 
@@ -1762,16 +1762,16 @@
       // Phase overview cards
       html += '<div class="phase-cards">';
       phasing.forEach(function(p) {
-        var s = (p.status || '').toLowerCase();
+        var s = (p.Status || '').toLowerCase();
         var cls = 'not-started';
         if (s === 'complete' || s === 'completed' || s === 'done') cls = 'complete';
         else if (s === 'in progress') cls = 'in-progress';
         else if (s === 'blocked') cls = 'blocked';
 
         html += '<div class="phase-card ' + cls + '">';
-        html += '<div class="phase-num">Phase ' + escapeHtml(p.phase) + '</div>';
-        html += '<div class="phase-epic">' + escapeHtml(p.epic) + '</div>';
-        html += '<div class="phase-status ' + statusClass(p.status) + '">' + escapeHtml(p.status) + '</div>';
+        html += '<div class="phase-num">Phase ' + escapeHtml(p.Phase) + '</div>';
+        html += '<div class="phase-epic">' + escapeHtml(p.Epic) + '</div>';
+        html += '<div class="phase-status ' + statusClass(p.Status) + '">' + escapeHtml(p.Status) + '</div>';
         html += '</div>';
       });
       html += '</div>';
@@ -1786,16 +1786,16 @@
         html += '</div>';
         html += '<div class="collapsible-body open">';
         html += '<table class="data-table">';
-        html += '<thead><tr><th>#</th><th>Task</th><th>Story</th><th>Depends On</th><th>Linear</th><th>Status</th></tr></thead>';
+        html += '<thead><tr><th>#</th><th>Task</th><th>Owner</th><th>Dependencies</th><th>Status</th><th>Notes</th></tr></thead>';
         html += '<tbody>';
         tasks.forEach(function(t) {
           html += '<tr>';
-          html += '<td>' + escapeHtml(t.order) + '</td>';
-          html += '<td>' + escapeHtml(t.task) + '</td>';
-          html += '<td>' + escapeHtml(t.story) + '</td>';
-          html += '<td>' + escapeHtml(t.dependsOn) + '</td>';
-          html += '<td>' + escapeHtml(t.linearIssue) + '</td>';
-          html += '<td class="' + statusClass(t.status) + '">' + escapeHtml(t.status) + '</td>';
+          html += '<td>' + escapeHtml(t['#']) + '</td>';
+          html += '<td>' + escapeHtml(t.Task) + '</td>';
+          html += '<td>' + escapeHtml(t.Owner) + '</td>';
+          html += '<td>' + escapeHtml(t.Dependencies) + '</td>';
+          html += '<td class="' + statusClass(t.Status) + '">' + escapeHtml(t.Status) + '</td>';
+          html += '<td>' + escapeHtml(t.Notes) + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -1809,11 +1809,10 @@
         html += '<h3>Blocked Items</h3>';
         blockedItems.forEach(function(b) {
           html += '<div style="padding:8px 0;border-bottom:1px solid rgba(248,113,113,0.1);">';
-          html += '<div style="font-weight:500;">' + escapeHtml(b.item) + '</div>';
+          html += '<div style="font-weight:500;">' + escapeHtml(b.Item) + '</div>';
           html += '<div style="font-size:13px;color:var(--text-secondary);">';
-          html += 'Blocked by: ' + escapeHtml(b.blockedBy) + ' (' + escapeHtml(b.type) + ')';
-          html += ' &middot; Owner: ' + escapeHtml(b.owner);
-          html += ' &middot; Since: ' + escapeHtml(b.since) + ' (' + daysSince(b.since) + ' days)';
+          html += 'Blocked by: ' + escapeHtml(b['Blocked By']) + ' (' + escapeHtml(b.Type) + ')';
+          html += ' &middot; Owner: ' + escapeHtml(b.Owner);
           html += '</div>';
           html += '</div>';
         });
@@ -1922,11 +1921,11 @@
         html += '<thead><tr><th>Milestone</th><th>Target Date</th><th>Status</th><th>Progress</th></tr></thead>';
         html += '<tbody>';
         milestones.forEach(function(m) {
-          var pct = parsePercent(m.percentComplete);
+          var pct = parsePercent(m['% Complete']);
           html += '<tr>';
-          html += '<td>' + escapeHtml(m.milestone) + '</td>';
-          html += '<td>' + escapeHtml(m.targetDate) + '</td>';
-          html += '<td class="' + statusClass(m.status) + '">' + escapeHtml(m.status) + '</td>';
+          html += '<td>' + escapeHtml(m.Milestone) + '</td>';
+          html += '<td>' + escapeHtml(m['Target Date']) + '</td>';
+          html += '<td class="' + statusClass(m.Status) + '">' + escapeHtml(m.Status) + '</td>';
           html += '<td><div class="mini-progress">';
           html += '<div class="progress-bar"><div class="fill" style="width:' + pct + '%;background:var(--accent);"></div></div>';
           html += '<span class="pct">' + pct + '%</span>';
@@ -1939,19 +1938,19 @@
       // Epic phase grid
       if (grid.length > 0) {
         html += '<div class="section-title" style="margin-top:24px;">Epic Phase Grid</div>';
-        var phases = ['discovery', 'design', 'build', 'test', 'deploy'];
+        var phases = ['Discovery', 'Design', 'Build', 'Test', 'Deploy'];
         html += '<table class="phase-grid">';
         html += '<thead><tr><th>Epic</th>';
         phases.forEach(function(p) {
-          html += '<th>' + p.charAt(0).toUpperCase() + p.slice(1) + '</th>';
+          html += '<th>' + p + '</th>';
         });
         html += '</tr></thead>';
         html += '<tbody>';
         grid.forEach(function(row) {
           html += '<tr>';
-          html += '<td style="text-align:left;font-weight:500;">' + escapeHtml(row.epic) + '</td>';
+          html += '<td style="text-align:left;font-weight:500;">' + escapeHtml(row.Epic) + '</td>';
           phases.forEach(function(p) {
-            var val = row[p] || '--';
+            var val = (row[p] || '--').replace(/\*\*/g, '');
             var cls = '';
             var lower = val.toLowerCase();
             if (lower === 'complete' || lower === 'completed') cls = 'complete-phase';
@@ -1972,9 +1971,19 @@
       }
 
       // Upcoming milestones
-      if (rm.upcomingMilestones) {
+      if (rm.upcomingMilestones && rm.upcomingMilestones.length > 0) {
         html += '<div class="section-title" style="margin-top:16px;">Upcoming</div>';
-        html += '<ul style="padding-left:18px;font-size:14px;color:var(--text-secondary);"><li>' + escapeHtml(rm.upcomingMilestones) + '</li></ul>';
+        html += '<table class="data-table">';
+        html += '<thead><tr><th>Milestone</th><th>What Must Happen</th><th>Target</th></tr></thead>';
+        html += '<tbody>';
+        rm.upcomingMilestones.forEach(function(u) {
+          html += '<tr>';
+          html += '<td>' + escapeHtml(u.Milestone) + '</td>';
+          html += '<td>' + escapeHtml(u['What Must Happen']) + '</td>';
+          html += '<td>' + escapeHtml(u.Target) + '</td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table>';
       }
 
       document.getElementById('main-content').innerHTML = html;

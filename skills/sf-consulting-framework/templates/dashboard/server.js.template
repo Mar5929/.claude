@@ -287,16 +287,22 @@ function parseExecutionPlan(filePath) {
 
   const result = { epicPhasing: [], taskTables: {}, blockedItems: [] };
 
-  // Epic Phasing table
+  // Epic Phasing table (filter to pipe lines only to avoid sub-section noise)
   const epicPhasingSection = getSectionContent(content, 'Epic Phasing');
   if (epicPhasingSection) {
-    result.epicPhasing = parseMarkdownTable(epicPhasingSection);
+    const phasingTableLines = epicPhasingSection.split('\n').filter(l => l.trim().startsWith('|'));
+    if (phasingTableLines.length >= 2) {
+      result.epicPhasing = parseMarkdownTable(phasingTableLines.join('\n'));
+    }
   }
 
-  // Blocked Items table
+  // Blocked Items table (filter to pipe lines only to avoid --- noise)
   const blockedSection = getSectionContent(content, 'Blocked Items');
   if (blockedSection) {
-    result.blockedItems = parseMarkdownTable(blockedSection);
+    const blockedTableLines = blockedSection.split('\n').filter(l => l.trim().startsWith('|'));
+    if (blockedTableLines.length >= 2) {
+      result.blockedItems = parseMarkdownTable(blockedTableLines.join('\n'));
+    }
   }
 
   // Task tables: each epic has a ### heading followed by a table
@@ -308,10 +314,18 @@ function parseExecutionPlan(filePath) {
     const sectionText = epicMatch[2];
     // Check if this section contains a table
     if (sectionText.includes('|')) {
-      // Extract just the table portion
+      // Extract just the table portion, deduplicating headers from multi-table sub-sections
       const tableLines = sectionText.split('\n').filter(l => l.trim().startsWith('|'));
       if (tableLines.length >= 2) {
-        result.taskTables[epicName] = parseMarkdownTable(tableLines.join('\n'));
+        const header = tableLines[0];
+        const filtered = [tableLines[0], tableLines[1]];
+        for (let i = 2; i < tableLines.length; i++) {
+          const trimmed = tableLines[i].trim();
+          if (/^\|[\s-|]+\|$/.test(trimmed)) continue;
+          if (trimmed === header.trim()) continue;
+          filtered.push(tableLines[i]);
+        }
+        result.taskTables[epicName] = parseMarkdownTable(filtered.join('\n'));
       }
     }
   }
@@ -324,32 +338,46 @@ function parseExecutionPlan(filePath) {
  */
 function parseRoadmap(filePath) {
   const content = readFileSafe(filePath);
-  if (!content) return { milestones: [], epicPhaseGrid: [], currentFocus: '', upcomingMilestones: '' };
+  if (!content) return { milestones: [], epicPhaseGrid: [], currentFocus: '', upcomingMilestones: [] };
 
   const result = {
     milestones: [],
     epicPhaseGrid: [],
     currentFocus: '',
-    upcomingMilestones: '',
+    upcomingMilestones: [],
   };
 
-  // Timeline table
+  // Timeline table (filter to pipe lines only)
   const timelineSection = getSectionContent(content, 'Timeline');
   if (timelineSection) {
-    result.milestones = parseMarkdownTable(timelineSection);
+    const timelineLines = timelineSection.split('\n').filter(l => l.trim().startsWith('|'));
+    if (timelineLines.length >= 2) {
+      result.milestones = parseMarkdownTable(timelineLines.join('\n'));
+    }
   }
 
-  // Phase Status by Epic table
+  // Phase Status by Epic table (truncate at first ### sub-heading, then filter pipe lines)
   const phaseSection = getSectionContent(content, 'Phase Status by Epic');
   if (phaseSection) {
-    result.epicPhaseGrid = parseMarkdownTable(phaseSection);
+    const subHeadingIdx = phaseSection.search(/^###\s/m);
+    const phaseSectionClean = subHeadingIdx >= 0 ? phaseSection.slice(0, subHeadingIdx) : phaseSection;
+    const phaseLines = phaseSectionClean.split('\n').filter(l => l.trim().startsWith('|'));
+    if (phaseLines.length >= 2) {
+      result.epicPhaseGrid = parseMarkdownTable(phaseLines.join('\n'));
+    }
   }
 
   // Current Focus text
   result.currentFocus = getSectionContent(content, 'Current Focus');
 
-  // Upcoming Milestones text
-  result.upcomingMilestones = getSectionContent(content, 'Upcoming Milestones');
+  // Upcoming Milestones (parse as table)
+  const upcomingSection = getSectionContent(content, 'Upcoming Milestones');
+  if (upcomingSection) {
+    const upcomingLines = upcomingSection.split('\n').filter(l => l.trim().startsWith('|'));
+    if (upcomingLines.length >= 2) {
+      result.upcomingMilestones = parseMarkdownTable(upcomingLines.join('\n'));
+    }
+  }
 
   return result;
 }
