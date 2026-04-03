@@ -334,6 +334,73 @@ function parseExecutionPlan(filePath) {
 }
 
 /**
+ * Update a single field for a task row in execution-plan.md.
+ * Finds the task by its # column value and updates the named field.
+ */
+function updateTaskField(taskNumber, field, newValue) {
+  const filePath = path.join(ROOT, 'engagement', 'execution-plan.md');
+  const content = readFileSafe(filePath);
+  if (!content) return { success: false, error: 'Could not read execution-plan.md' };
+
+  // Sanitize: strip pipe characters to prevent table breakage
+  const safeValue = String(newValue).replace(/\|/g, '/');
+  const taskNum = String(taskNumber).trim();
+
+  const lines = content.split('\n');
+  let lastHeaderColumns = [];
+  let inTaskTable = false; // true when current header starts with "#"
+  let updated = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim().startsWith('|')) continue;
+
+    const cells = line.split('|').slice(1, -1); // drop leading/trailing empty splits
+    if (cells.length < 2) continue;
+
+    // Detect separator rows (all dashes/spaces)
+    if (/^[\s|-]+$/.test(cells.join('|'))) continue;
+
+    // Detect header rows
+    const firstCell = cells[0].trim();
+    if (firstCell === '#') {
+      lastHeaderColumns = cells.map(c => c.trim());
+      inTaskTable = true;
+      continue;
+    }
+    if (/^[A-Za-z]/.test(firstCell) && !/^\d/.test(firstCell)) {
+      // Non-numeric first cell that isn't '#' means a different table header
+      inTaskTable = false;
+      continue;
+    }
+
+    // Only match rows inside task tables (header starts with #)
+    if (!inTaskTable) continue;
+
+    // Check if this row's # column matches the target task number
+    if (firstCell !== taskNum) continue;
+
+    // Find the column index for the requested field
+    const colIndex = lastHeaderColumns.indexOf(field);
+    if (colIndex === -1) return { success: false, error: 'Field "' + field + '" not found in table header' };
+
+    // Rebuild the row with the updated cell
+    const newCells = cells.map((c, idx) => {
+      if (idx === colIndex) return ' ' + safeValue + ' ';
+      return c;
+    });
+    lines[i] = '|' + newCells.join('|') + '|';
+    updated = true;
+    break;
+  }
+
+  if (!updated) return { success: false, error: 'Task #' + taskNum + ' not found' };
+
+  fs.writeFileSync(filePath, lines.join('\n'), 'utf-8');
+  return { success: true };
+}
+
+/**
  * Parse roadmap.md. Extract milestones, phase grid, current focus, upcoming.
  */
 function parseRoadmap(filePath) {
@@ -650,6 +717,25 @@ function handleDispatch(ws, message) {
 
     case 'park':
       prompt = `Park question ${questionId} in ${filePath}. Reason: "${reason}". Move it from the Open section to the Parked section and update its status.`;
+      break;
+
+    case 'update-task': {
+      // Fast path: direct file edit, no Claude CLI
+      const result = updateTaskField(message.taskNumber, message.field, message.value);
+      ws.send(JSON.stringify({
+        type: 'dispatch-complete',
+        action: 'update-task',
+        taskNumber: message.taskNumber,
+        field: message.field,
+        value: message.value,
+        exitCode: result.success ? 0 : 1,
+        response: result.success ? 'Task #' + message.taskNumber + ' ' + message.field + ' updated.' : result.error,
+      }));
+      return;
+    }
+
+    case 'cascade-task-update':
+      prompt = `Task #${message.taskNumber} in engagement/execution-plan.md was just updated: ${message.field} is now "${message.value}". Review and cascade side effects: (1) If status changed to Completed, check if any blocked tasks should be unblocked, update the Blocked Items table, update roadmap.md progress percentages, and add a Changelog entry with today's date. (2) If status changed to Blocked, add to Blocked Items table if not already there and note what it blocks. (3) Update the "Last updated" date at the top of execution-plan.md.`;
       break;
 
     default:

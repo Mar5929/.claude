@@ -992,6 +992,56 @@
     .status-in-progress { color: var(--accent); }
     .status-blocked { color: var(--danger); }
     .status-todo { color: var(--text-secondary); }
+    .status-partial { color: var(--warning); }
+
+    .editable-cell {
+      cursor: pointer;
+      position: relative;
+    }
+    .editable-cell:hover {
+      background: rgba(99,102,241,0.08);
+      outline: 1px dashed rgba(99,102,241,0.4);
+      outline-offset: -1px;
+      border-radius: 2px;
+    }
+    .editable-cell select {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--accent);
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+    }
+    .editable-cell textarea {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--accent);
+      padding: 4px 6px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: inherit;
+      width: 100%;
+      min-height: 50px;
+      resize: vertical;
+    }
+    .cell-saving {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .cascade-toast-btn {
+      display: inline-block;
+      margin-left: 8px;
+      font-size: 12px;
+      padding: 2px 10px;
+      border-radius: 4px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+    }
+    .cascade-toast-btn:hover { opacity: 0.85; }
 
     .likelihood-high, .impact-high { color: var(--danger); }
     .likelihood-medium, .impact-medium { color: var(--warning); }
@@ -1058,6 +1108,7 @@
     let activityFeed = [];
     let questionFilters = { status: 'all', scope: 'all' };
     let expandedQuestion = null;
+    let editingTaskCell = null;
     let ws = null;
 
     /* ========================================
@@ -1107,6 +1158,7 @@
       if (s === 'complete' || s === 'completed' || s === 'done') return 'status-complete';
       if (s === 'in progress') return 'status-in-progress';
       if (s === 'blocked') return 'status-blocked';
+      if (s === 'partial') return 'status-partial';
       return 'status-todo';
     }
 
@@ -1220,7 +1272,21 @@
 
         case 'dispatch-complete':
           dismissPendingToasts();
-          if (msg.exitCode === 0) {
+          if (msg.action === 'update-task') {
+            // Remove saving indicator from any cells
+            document.querySelectorAll('.cell-saving').forEach(function(el) { el.classList.remove('cell-saving'); });
+            if (msg.exitCode === 0) {
+              var label = 'Task #' + escapeHtml(String(msg.taskNumber || '')) + ' ' + escapeHtml(msg.field || '') + ' updated';
+              // Offer cascade for Completed or Blocked status changes
+              if (msg.field === 'Status' && (msg.value === 'Completed' || msg.value === 'Blocked')) {
+                showToast('success', label + ' <button class="cascade-toast-btn" onclick="triggerCascade(\'' + escapeHtml(String(msg.taskNumber)) + '\', \'Status\', \'' + escapeHtml(msg.value) + '\')">Cascade</button>');
+              } else {
+                showToast('success', label);
+              }
+            } else {
+              showToast('error', 'Failed to update task: ' + escapeHtml(msg.response || ''));
+            }
+          } else if (msg.exitCode === 0) {
             showToast('success', 'Completed: ' + escapeHtml(msg.action) + ' ' + escapeHtml(msg.questionId || ''));
           } else {
             showToast('error', 'Failed: ' + escapeHtml(msg.action) + ' ' + escapeHtml(msg.questionId || '') + ' (exit ' + msg.exitCode + ')');
@@ -1744,6 +1810,9 @@
        Panel: Execution
        ======================================== */
     function renderExecution() {
+      // Skip re-render if user is editing a cell inline
+      if (editingTaskCell) return;
+
       var ep = state.executionPlan || {};
       var phasing = ep.epicPhasing || [];
       var taskTables = ep.taskTables || {};
@@ -1789,13 +1858,15 @@
         html += '<thead><tr><th>#</th><th>Task</th><th>Owner</th><th>Dependencies</th><th>Status</th><th>Notes</th></tr></thead>';
         html += '<tbody>';
         tasks.forEach(function(t) {
+          var taskNum = escapeHtml(t['#']);
+          var statusCls = statusClass(t.Status);
           html += '<tr>';
-          html += '<td>' + escapeHtml(t['#']) + '</td>';
+          html += '<td>' + taskNum + '</td>';
           html += '<td>' + escapeHtml(t.Task) + '</td>';
           html += '<td>' + escapeHtml(t.Owner) + '</td>';
           html += '<td>' + escapeHtml(t.Dependencies) + '</td>';
-          html += '<td class="' + statusClass(t.Status) + '">' + escapeHtml(t.Status) + '</td>';
-          html += '<td>' + escapeHtml(t.Notes) + '</td>';
+          html += '<td class="' + statusCls + ' editable-cell" onclick="editTaskStatus(this, \'' + taskNum + '\', \'' + escapeHtml(t.Status) + '\')">' + escapeHtml(t.Status) + '</td>';
+          html += '<td class="editable-cell" onclick="editTaskNotes(this, \'' + taskNum + '\')">' + escapeHtml(t.Notes) + '</td>';
           html += '</tr>';
         });
         html += '</tbody></table>';
@@ -1826,6 +1897,109 @@
       el.classList.toggle('open');
       var body = el.nextElementSibling;
       if (body) body.classList.toggle('open');
+    }
+
+    /* ========================================
+       Inline Task Editing
+       ======================================== */
+    var TASK_STATUSES = ['Not Started', 'Partial', 'In Progress', 'Blocked', 'Completed'];
+
+    function editTaskStatus(cell, taskNumber, currentStatus) {
+      if (editingTaskCell) return;
+      editingTaskCell = taskNumber;
+
+      var select = document.createElement('select');
+      TASK_STATUSES.forEach(function(s) {
+        var opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        if (s === currentStatus) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      cell.textContent = '';
+      cell.appendChild(select);
+      select.focus();
+
+      select.addEventListener('change', function() {
+        var newVal = select.value;
+        cell.classList.add('cell-saving');
+        cell.textContent = newVal;
+        cell.className = statusClass(newVal) + ' editable-cell cell-saving';
+        editingTaskCell = null;
+        dispatch({
+          type: 'dispatch',
+          action: 'update-task',
+          taskNumber: taskNumber,
+          field: 'Status',
+          value: newVal,
+        });
+      });
+
+      select.addEventListener('blur', function() {
+        // Restore original if no change was made
+        if (editingTaskCell === taskNumber) {
+          cell.textContent = currentStatus;
+          editingTaskCell = null;
+        }
+      });
+    }
+
+    function editTaskNotes(cell, taskNumber) {
+      if (editingTaskCell) return;
+      editingTaskCell = taskNumber;
+
+      var currentText = cell.textContent || '';
+      var textarea = document.createElement('textarea');
+      textarea.value = currentText;
+      textarea.rows = 2;
+
+      cell.textContent = '';
+      cell.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+
+      function save() {
+        var newVal = textarea.value.trim();
+        if (newVal !== currentText.trim()) {
+          cell.classList.add('cell-saving');
+          cell.textContent = newVal;
+          dispatch({
+            type: 'dispatch',
+            action: 'update-task',
+            taskNumber: taskNumber,
+            field: 'Notes',
+            value: newVal,
+          });
+        } else {
+          cell.textContent = currentText;
+        }
+        editingTaskCell = null;
+      }
+
+      textarea.addEventListener('blur', save);
+      textarea.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && e.ctrlKey) {
+          e.preventDefault();
+          textarea.removeEventListener('blur', save);
+          save();
+        }
+        if (e.key === 'Escape') {
+          textarea.removeEventListener('blur', save);
+          cell.textContent = currentText;
+          editingTaskCell = null;
+        }
+      });
+    }
+
+    function triggerCascade(taskNumber, field, value) {
+      dispatch({
+        type: 'dispatch',
+        action: 'cascade-task-update',
+        taskNumber: taskNumber,
+        field: field,
+        value: value,
+      });
     }
 
     /* ========================================
