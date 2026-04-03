@@ -22,16 +22,16 @@
     }
 
     body.light {
-      --bg-primary: #f8f9fb;
+      --bg-primary: #f1f3f7;
       --bg-card: #ffffff;
       --bg-sidebar: #ffffff;
-      --border: #e2e8f0;
+      --border: #c8d0dc;
       --text-primary: #0f172a;
-      --text-secondary: #94a3b8;
-      --accent: #4f46e5;
-      --success: #16a34a;
-      --warning: #a16207;
-      --danger: #dc2626;
+      --text-secondary: #4b5563;
+      --accent: #4338ca;
+      --success: #15803d;
+      --warning: #92400e;
+      --danger: #b91c1c;
     }
 
     /* ========================================
@@ -57,7 +57,7 @@
        Sidebar
        ======================================== */
     #sidebar {
-      width: 62px;
+      width: 80px;
       min-height: 100vh;
       background: var(--bg-sidebar);
       border-right: 1px solid var(--border);
@@ -96,18 +96,27 @@
     }
 
     .sidebar-nav-btn {
-      width: 42px;
-      height: 42px;
+      width: 64px;
+      height: auto;
+      padding: 6px 4px;
       border-radius: 8px;
       border: none;
       background: transparent;
       cursor: pointer;
       font-size: 18px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
       transition: background 0.15s;
       color: var(--text-secondary);
+    }
+
+    .sidebar-nav-btn .nav-label {
+      font-size: 10px;
+      line-height: 1.2;
+      letter-spacing: 0.3px;
     }
 
     .sidebar-nav-btn:hover {
@@ -131,18 +140,27 @@
     }
 
     .theme-toggle {
-      width: 42px;
-      height: 42px;
+      width: 64px;
+      height: auto;
+      padding: 6px 4px;
       border-radius: 8px;
       border: none;
       background: transparent;
       cursor: pointer;
       font-size: 18px;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
       color: var(--text-secondary);
       transition: background 0.15s;
+    }
+
+    .theme-toggle .nav-label {
+      font-size: 10px;
+      line-height: 1.2;
+      letter-spacing: 0.3px;
     }
 
     .theme-toggle:hover {
@@ -157,11 +175,11 @@
        Main Content Area
        ======================================== */
     #main-wrapper {
-      margin-left: 62px;
+      margin-left: 80px;
       flex: 1;
       min-height: 100vh;
       padding: 28px 32px;
-      max-width: 1280px;
+      width: calc(100% - 80px);
     }
 
     /* ========================================
@@ -1002,16 +1020,16 @@
       &#x2705;
     </div>
     <div class="sidebar-nav">
-      <button class="sidebar-nav-btn active" data-panel="briefing" onclick="switchPanel('briefing')" title="Briefing">&#x1F4CB;</button>
-      <button class="sidebar-nav-btn" data-panel="questions" onclick="switchPanel('questions')" title="Questions">&#x2753;</button>
-      <button class="sidebar-nav-btn" data-panel="execution" onclick="switchPanel('execution')" title="Execution">&#x26A1;</button>
-      <button class="sidebar-nav-btn" data-panel="risks" onclick="switchPanel('risks')" title="Risks">&#x1F6E1;&#xFE0F;</button>
-      <button class="sidebar-nav-btn" data-panel="roadmap" onclick="switchPanel('roadmap')" title="Roadmap">&#x1F5FA;&#xFE0F;</button>
+      <button class="sidebar-nav-btn active" data-panel="briefing" onclick="switchPanel('briefing')" title="Briefing">&#x1F4CB;<span class="nav-label">Briefing</span></button>
+      <button class="sidebar-nav-btn" data-panel="questions" onclick="switchPanel('questions')" title="Questions">&#x2753;<span class="nav-label">Questions</span></button>
+      <button class="sidebar-nav-btn" data-panel="execution" onclick="switchPanel('execution')" title="Execution">&#x26A1;<span class="nav-label">Execution</span></button>
+      <button class="sidebar-nav-btn" data-panel="risks" onclick="switchPanel('risks')" title="Risks">&#x1F6E1;&#xFE0F;<span class="nav-label">Risks</span></button>
+      <button class="sidebar-nav-btn" data-panel="roadmap" onclick="switchPanel('roadmap')" title="Roadmap">&#x1F5FA;&#xFE0F;<span class="nav-label">Roadmap</span></button>
     </div>
     <div class="sidebar-bottom">
-      <button class="sidebar-nav-btn" data-panel="activity" onclick="switchPanel('activity')" title="Activity">&#x1F4EC;</button>
+      <button class="sidebar-nav-btn" data-panel="activity" onclick="switchPanel('activity')" title="Activity">&#x1F4EC;<span class="nav-label">Activity</span></button>
       <button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme" id="theme-toggle-btn">
-        &#x1F319;
+        &#x1F319;<span class="nav-label">Theme</span>
       </button>
     </div>
   </nav>

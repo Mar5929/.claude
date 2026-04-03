@@ -638,7 +638,6 @@ function handleDispatch(ws, message) {
     '--allowedTools', 'Read,Write,Edit,Bash,Grep,Glob',
   ], {
     cwd: ROOT,
-    shell: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -733,9 +732,10 @@ const server = http.createServer((req, res) => {
 // WebSocket Server
 // ---------------------------------------------------------------------------
 
-const wss = new WebSocketServer({ server });
+let wss;
 
 function broadcast(data) {
+  if (!wss) return;
   const payload = JSON.stringify(data);
   for (const client of wss.clients) {
     if (client.readyState === 1) { // WebSocket.OPEN
@@ -744,26 +744,28 @@ function broadcast(data) {
   }
 }
 
-wss.on('connection', (ws) => {
-  // Send current state on connect
-  try {
-    const state = buildState();
-    ws.send(JSON.stringify({ type: 'state', data: state }));
-  } catch (err) {
-    ws.send(JSON.stringify({ type: 'error', message: err.message }));
-  }
-
-  ws.on('message', (raw) => {
+function setupWebSocket(wss) {
+  wss.on('connection', (ws) => {
+    // Send current state on connect
     try {
-      const message = JSON.parse(raw.toString());
-      if (message.type === 'dispatch') {
-        handleDispatch(ws, message);
-      }
+      const state = buildState();
+      ws.send(JSON.stringify({ type: 'state', data: state }));
     } catch (err) {
-      ws.send(JSON.stringify({ type: 'error', message: `Invalid message: ${err.message}` }));
+      ws.send(JSON.stringify({ type: 'error', message: err.message }));
     }
+
+    ws.on('message', (raw) => {
+      try {
+        const message = JSON.parse(raw.toString());
+        if (message.type === 'dispatch') {
+          handleDispatch(ws, message);
+        }
+      } catch (err) {
+        ws.send(JSON.stringify({ type: 'error', message: `Invalid message: ${err.message}` }));
+      }
+    });
   });
-});
+}
 
 // ---------------------------------------------------------------------------
 // File Watcher
@@ -805,19 +807,25 @@ function tryListen(port) {
     process.exit(1);
   }
 
-  server.listen(port, () => {
-    console.log(`SF Command Center running at http://localhost:${port}`);
+  const probe = require('net').createServer();
+  probe.once('error', () => {
+    probe.close();
+    tryListen(port + 1);
   });
-
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      server.removeAllListeners('error');
-      tryListen(port + 1);
-    } else {
-      console.error('Server error:', err.message);
-      process.exit(1);
-    }
+  probe.once('listening', () => {
+    probe.close(() => {
+      server.listen(port, () => {
+        console.log(`SF Command Center running at http://localhost:${port}`);
+        wss = new WebSocketServer({ server });
+        setupWebSocket(wss);
+      });
+      server.on('error', (err) => {
+        console.error('Server error:', err.message);
+        process.exit(1);
+      });
+    });
   });
+  probe.listen(port);
 }
 
 tryListen(PORT_START);
