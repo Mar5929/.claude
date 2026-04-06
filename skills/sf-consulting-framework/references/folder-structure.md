@@ -40,35 +40,35 @@ project-root/
 │   ├── deployment-checklists/          # Deployment readiness assessments per epic
 │   │   └── {date}-{epic}-checklist.md  # e.g., 2025-03-28-data-dedup-checklist.md
 │   │
-│   └── architecture/
-│       ├── solution-design.md          # High-level solution architecture for the full engagement
+│   ├── architecture/
+│   │   └── solution-design.md          # High-level solution architecture for the full engagement
+│   │
+│   └── epics/
+│       ├── {epic-a}/                   # Complex epic: has features
+│       │   ├── overview.md             # Epic context, scope, current phase, status
+│       │   ├── questions.md            # Epic-scoped questions
+│       │   ├── decisions.md            # Epic-scoped decisions
+│       │   ├── technical-design.md     # Technical design for this epic
+│       │   ├── user-stories.md         # Stories not under a specific feature
+│       │   │
+│       │   └── features/               # ONLY created when epic is complex enough
+│       │       ├── {feature-one}/
+│       │       │   ├── technical-design.md
+│       │       │   ├── user-stories.md
+│       │       │   └── questions.md
+│       │       │
+│       │       └── {feature-two}/
+│       │           ├── technical-design.md
+│       │           ├── user-stories.md
+│       │           └── questions.md
 │       │
-│       └── epics/
-│           ├── {epic-a}/               # Complex epic: has features
-│           │   ├── overview.md         # Epic context, scope, current phase, status
-│           │   ├── questions.md        # Epic-scoped questions
-│           │   ├── decisions.md        # Epic-scoped decisions
-│           │   ├── technical-design.md # Technical design for this epic
-│           │   ├── user-stories.md     # Stories not under a specific feature
-│           │   │
-│           │   └── features/           # ONLY created when epic is complex enough
-│           │       ├── {feature-one}/
-│           │       │   ├── technical-design.md
-│           │       │   ├── user-stories.md
-│           │       │   └── questions.md
-│           │       │
-│           │       └── {feature-two}/
-│           │           ├── technical-design.md
-│           │           ├── user-stories.md
-│           │           └── questions.md
-│           │
-│           └── {epic-b}/               # Simple epic: no features needed
-│               ├── overview.md
-│               ├── questions.md
-│               ├── decisions.md
-│               ├── technical-design.md
-│               ├── user-stories.md
-│               └── test-plan.md        # Generated during build phase by test-plan workflow
+│       └── {epic-b}/                   # Simple epic: no features needed
+│           ├── overview.md
+│           ├── questions.md
+│           ├── decisions.md
+│           ├── technical-design.md
+│           ├── user-stories.md
+│           └── test-plan.md            # Generated during build phase by test-plan workflow
 │
 └── references/                         # Unprocessed meeting transcripts, brain dumps, notes
     └── {date}-{description}.md
@@ -474,7 +474,7 @@ The high-level solution architecture for the entire engagement. Describes how th
 
 ### Epic Level
 
-#### `architecture/epics/{epic-name}/overview.md`
+#### `epics/{epic-name}/overview.md`
 Epic-specific context and status.
 
 **Template:**
@@ -499,17 +499,17 @@ Epic-specific context and status.
 {Explicitly what this epic does NOT cover, to prevent scope creep}
 ```
 
-#### `architecture/epics/{epic-name}/questions.md`
+#### `epics/{epic-name}/questions.md`
 Questions scoped to this epic. Same format as engagement-level questions.
 
 **Template:** Same as `engagement/questions.md` but scoped header reads `# Questions — {Epic Name}`
 
-#### `architecture/epics/{epic-name}/decisions.md`
+#### `epics/{epic-name}/decisions.md`
 Decisions scoped to this epic. Same format as engagement-level decisions.
 
 **Template:** Same as `engagement/decisions.md` but scoped header reads `# Decisions — {Epic Name}`
 
-#### `architecture/epics/{epic-name}/technical-design.md`
+#### `epics/{epic-name}/technical-design.md`
 The technical approach for this epic. A living document that evolves from rough direction in discovery to full specification in design phase.
 
 For simple epics, this is the only design doc. For complex epics, this becomes the high-level design, with detailed designs in the `features/` subdirectory.
@@ -548,7 +548,7 @@ For simple epics, this is the only design doc. For complex epics, this becomes t
 {Questions specific to this design that need answers before it can be finalized. These should also be tracked in the epic's questions.md.}
 ```
 
-#### `architecture/epics/{epic-name}/user-stories.md`
+#### `epics/{epic-name}/user-stories.md`
 User stories for this epic. For simple epics, stories live here directly. For complex epics with features, this file contains only stories that don't fit under a specific feature.
 
 **Template:**

@@ -355,7 +355,7 @@ When the user says "test plan", "UAT plan", "generate tests", or similar:
    - Test data requirements
    - Edge cases derived from questions/decisions
    - UAT script mapping tests to requirements
-7. Save to `engagement/architecture/epics/{epic}/test-plan.md`.
+7. Save to `engagement/epics/{epic}/test-plan.md`.
 
 ### Decision Review
 
@@ -394,7 +394,7 @@ When the user says "handoff", "create handoff document", "onboarding doc", or si
 When a new epic is added to the project:
 
 1. Read `references/folder-structure.md` for the epic scaffolding order.
-2. Create the directory structure under `engagement/architecture/epics/{epic-name}/`:
+2. Create the directory structure under `engagement/epics/{epic-name}/`:
    - `overview.md` (from `templates/epic-overview.md.template`)
    - `questions.md` (from `templates/questions.md.template`)
    - `decisions.md` (from `templates/decisions.md.template`)
@@ -485,7 +485,7 @@ All templates live in `templates/`. Use them when scaffolding new projects or ad
 | `status-report.md.template` | `engagement/status-reports/{date}-status.md` |
 | `change-requests.md.template` | `engagement/change-requests.md` |
 | `deploy-checklist.md.template` | `engagement/deployment-checklists/{date}-{epic}-checklist.md` |
-| `test-plan.md.template` | `engagement/architecture/epics/{epic}/test-plan.md` |
+| `test-plan.md.template` | `engagement/epics/{epic}/test-plan.md` |
 | `handoff.md.template` | `engagement/handoff-{date}.md` |
 | `dashboard/server.js.template` | `dashboard/server.js` |
 | `dashboard/index.html.template` | `dashboard/index.html` |

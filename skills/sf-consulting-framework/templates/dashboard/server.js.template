@@ -618,7 +618,7 @@ function buildState() {
   }
 
   // 2. Discover epic directories
-  const epicsDir = path.join(ROOT, 'engagement', 'architecture', 'epics');
+  const epicsDir = path.join(ROOT, 'engagement', 'epics');
   let epicDirs = [];
   try {
     epicDirs = fs.readdirSync(epicsDir).filter(name => {

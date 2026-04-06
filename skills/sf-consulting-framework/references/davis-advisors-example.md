@@ -351,7 +351,7 @@ Discovery phase for Data Deduplication and Platform Roll-Up Audit epics. Both ru
 
 ---
 
-### Epic Starter: `architecture/epics/data-deduplication/questions.md`
+### Epic Starter: `epics/data-deduplication/questions.md`
 
 ```markdown
 # Questions — Data Deduplication
@@ -413,7 +413,7 @@ Discovery phase for Data Deduplication and Platform Roll-Up Audit epics. Both ru
 
 ---
 
-### Epic Starter: `architecture/epics/platform-roll-up-audit/questions.md`
+### Epic Starter: `epics/platform-roll-up-audit/questions.md`
 
 ```markdown
 # Questions — Platform Roll-Up Audit
@@ -497,33 +497,33 @@ davis-advisors/
 │   │
 │   ├── meeting-notes/                 ← Empty, ready for meeting notes
 │   │
-│   └── architecture/
-│       ├── solution-design.md         ← Empty template (to be populated during discovery)
-│       │
-│       └── epics/
-│           ├── data-deduplication/
-│           │   ├── overview.md            ← Epic context with prefix: DD
-│           │   ├── questions.md           ← Starter questions above
-│           │   ├── decisions.md           ← Empty template
-│           │   ├── technical-design.md    ← Section stubs for merge rules, scope, pardot impact
-│           │   └── user-stories.md        ← Empty template
-│           ├── platform-roll-up-audit/
-│           │   ├── overview.md            ← Epic context with prefix: PRUP
-│           │   ├── questions.md           ← Starter questions above
-│           │   ├── decisions.md           ← Empty template
-│           │   ├── technical-design.md    ← Section stubs for audit approach, partnership logic
-│           │   └── user-stories.md        ← Empty template
-│           ├── data-loads-dakota-vetify/
-│           │   ├── overview.md            ← Epic context with prefix: DL
-│           │   ├── questions.md           ← Empty template
-│           │   ├── decisions.md           ← Empty template
-│           │   ├── technical-design.md    ← Empty template
-│           │   └── user-stories.md        ← Empty template
-│           └── discovery-data-integration/
-│               ├── overview.md            ← Epic context with prefix: DDI
-│               ├── questions.md           ← Empty template
-│               ├── decisions.md           ← Empty template
-│               ├── technical-design.md    ← Empty template
-│               └── user-stories.md        ← Empty template
+│   ├── architecture/
+│   │   └── solution-design.md         ← Empty template (to be populated during discovery)
+│   │
+│   └── epics/
+│       ├── data-deduplication/
+│       │   ├── overview.md            ← Epic context with prefix: DD
+│       │   ├── questions.md           ← Starter questions above
+│       │   ├── decisions.md           ← Empty template
+│       │   ├── technical-design.md    ← Section stubs for merge rules, scope, pardot impact
+│       │   └── user-stories.md        ← Empty template
+│       ├── platform-roll-up-audit/
+│       │   ├── overview.md            ← Epic context with prefix: PRUP
+│       │   ├── questions.md           ← Starter questions above
+│       │   ├── decisions.md           ← Empty template
+│       │   ├── technical-design.md    ← Section stubs for audit approach, partnership logic
+│       │   └── user-stories.md        ← Empty template
+│       ├── data-loads-dakota-vetify/
+│       │   ├── overview.md            ← Epic context with prefix: DL
+│       │   ├── questions.md           ← Empty template
+│       │   ├── decisions.md           ← Empty template
+│       │   ├── technical-design.md    ← Empty template
+│       │   └── user-stories.md        ← Empty template
+│       └── discovery-data-integration/
+│           ├── overview.md            ← Epic context with prefix: DDI
+│           ├── questions.md           ← Empty template
+│           ├── decisions.md           ← Empty template
+│           ├── technical-design.md    ← Empty template
+│           └── user-stories.md        ← Empty template
 └── references/                        ← Empty, ready for transcripts and brain dumps
 ```

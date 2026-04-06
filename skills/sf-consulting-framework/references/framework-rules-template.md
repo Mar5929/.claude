@@ -292,7 +292,7 @@ When the user says "test plan", "generate tests", "create test plan", "UAT plan"
    - Test data requirements
    - Edge cases from questions/decisions history
    - UAT script mapping tests to requirements
-7. Save to `engagement/architecture/epics/{epic}/test-plan.md`.
+7. Save to `engagement/epics/{epic}/test-plan.md`.
 8. Report the test plan to the user for review.
 
 ### 21. Decision Review
@@ -355,10 +355,10 @@ During build phase, questions come up on tasks. Apply this test:
 | `engagement/decisions.md` | Cross-cutting decisions | When making new decisions that might conflict |
 | `engagement/execution-plan.md` | Execution sequencing | For briefings, when creating/modifying tickets |
 | `engagement/risks.md` | Cross-cutting risks | For briefings, when new information surfaces |
-| `architecture/epics/*/overview.md` | Epic context and status | When working on a specific epic |
-| `architecture/epics/*/questions.md` | Epic-scoped questions | When working on a specific epic |
-| `architecture/epics/*/technical-design.md` | Technical approach | When answering questions, creating stories |
-| `architecture/epics/*/user-stories.md` | Buildable work items | When creating tasks or Linear tickets |
+| `epics/*/overview.md` | Epic context and status | When working on a specific epic |
+| `epics/*/questions.md` | Epic-scoped questions | When working on a specific epic |
+| `epics/*/technical-design.md` | Technical approach | When answering questions, creating stories |
+| `epics/*/user-stories.md` | Buildable work items | When creating tasks or Linear tickets |
 | `engagement/requirements.md` | Business requirements with traceability | When capturing requirements, checking coverage |
 | `engagement/roadmap.md` | Timeline, milestones, completion status | For briefings, when execution plan changes |
 | `engagement/session-log.md` | Append-only work session summaries | For status reports, handoffs, resuming work |
@@ -366,7 +366,7 @@ During build phase, questions come up on tasks. Apply this test:
 | `engagement/status-reports/*.md` | Client-facing status updates | For tracking what was communicated to client |
 | `engagement/deployment-checklists/*.md` | Deployment readiness assessments | Before deployments |
 | `engagement/meeting-notes/*.md` | Structured meeting records | When reviewing past discussions |
-| `architecture/epics/*/test-plan.md` | Test scenarios and UAT scripts | During build/test phases |
+| `epics/*/test-plan.md` | Test scenarios and UAT scripts | During build/test phases |
 
 ---
 
