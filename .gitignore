@@ -14,9 +14,10 @@ agents/gsd-*
 !commands/**
 # Exclude GSD commands
 commands/gsd/
-
 !hooks/
 !hooks/**
+# Exclude GSD hooks
+hooks/gsd-*
 
 !rules/
 !rules/**
