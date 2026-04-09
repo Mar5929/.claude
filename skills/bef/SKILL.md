@@ -3,9 +3,9 @@ name: bef
 description: >
   Build Execution Framework (BEF) — A deterministic, repeatable framework for decomposing
   full-stack application requirements into executable phases and tasks. Triggers on any /bef
-  slash command. Commands: /bef help, /bef init, /bef adopt, /bef prd, /bef arch, /bef phases,
-  /bef deep-dive [phase#], /bef sync [phase#], /bef execute [phase#] [task#], /bef status,
-  /bef replan, /bef add-phase, /bef amend [phase#]. Use this skill for any structured project
+  slash command. Commands: /bef:help, /bef:init, /bef:adopt, /bef:prd, /bef:arch, /bef:phases,
+  /bef:deep-dive [phase#], /bef:sync [phase#], /bef:execute [phase#] [task#], /bef:status,
+  /bef:replan, /bef:add-phase, /bef:amend [phase#]. Use this skill for any structured project
   planning, decomposition, or execution workflow. Also triggers when user mentions BEF, build
   execution framework, project decomposition, phase planning, or references the /bef command.
 ---
@@ -28,7 +28,7 @@ Each stage has a clear input, an interaction pattern, and a clear output.
 ## Core Principles
 
 1. **Always read PROJECT_STATE.md first.** Every command begins by reading the state file
-   to understand where the project is. If it doesn't exist, instruct the user to run `/bef init`.
+   to understand where the project is. If it doesn't exist, instruct the user to run `/bef:init`.
 
 2. **Never skip stages.** Stages 1-3 are strictly sequential. Stage 4 (deep-dive) requires
    all dependency phases to be deep-dived first. Stage 5 (execute) requires deep-dive + sync.
@@ -93,7 +93,7 @@ The templates are:
 
 ## Slash Commands
 
-### `/bef help`
+### `/bef:help`
 
 Print the command reference and a brief explanation of the workflow. Use this format:
 
@@ -107,19 +107,19 @@ executable phases and tasks through progressive refinement.
 Pipeline: PRD → Architecture → Phase Plan → Deep Dive → Execute
 
 COMMANDS:
-  /bef help                      Show this guide
-  /bef init                      Bootstrap a new project
-  /bef adopt                     Plug framework into an existing project
-  /bef prd                       Start/resume PRD interview
-  /bef arch                      Generate & review architecture docs
-  /bef phases                    Generate & review phase plan
-  /bef deep-dive [phase#]        Interview-based phase spec + task breakdown
-  /bef sync [phase#]             Push phase tasks to Linear
-  /bef execute [phase#] [task#]  Build a specific task
-  /bef status                    Show current project state
-  /bef replan                    Post-phase checkpoint & adjustment
-  /bef add-phase                 Add a new phase to the plan
-  /bef amend [phase#]            Revise an existing phase spec
+  /bef:help                      Show this guide
+  /bef:init                      Bootstrap a new project
+  /bef:adopt                     Plug framework into an existing project
+  /bef:prd                       Start/resume PRD interview
+  /bef:arch                      Generate & review architecture docs
+  /bef:phases                    Generate & review phase plan
+  /bef:deep-dive [phase#]        Interview-based phase spec + task breakdown
+  /bef:sync [phase#]             Push phase tasks to Linear
+  /bef:execute [phase#] [task#]  Build a specific task
+  /bef:status                    Show current project state
+  /bef:replan                    Post-phase checkpoint & adjustment
+  /bef:add-phase                 Add a new phase to the plan
+  /bef:amend [phase#]            Revise an existing phase spec
 
 RULES:
   • Stages 1-3 (PRD → Arch → Phases) are sequential
@@ -131,7 +131,7 @@ RULES:
 
 ---
 
-### `/bef init`
+### `/bef:init`
 
 **Purpose:** Bootstrap a new BEF project.
 
@@ -140,13 +140,13 @@ RULES:
 2. Create the full directory structure under `docs/bef/`.
 3. Read the `templates/PROJECT_STATE.md` template and create the initial `PROJECT_STATE.md`
    with the project name, description, and all stages marked as not started.
-4. Confirm to the user that the project is initialized and instruct them to run `/bef prd` next.
+4. Confirm to the user that the project is initialized and instruct them to run `/bef:prd` next.
 
 **Output:** Directory structure + `PROJECT_STATE.md`
 
 ---
 
-### `/bef adopt`
+### `/bef:adopt`
 
 **Purpose:** Plug BEF into a project that's already in progress.
 
@@ -170,11 +170,11 @@ RULES:
 
 ---
 
-### `/bef prd`
+### `/bef:prd`
 
 **Purpose:** Create the Product Requirements Document through structured interview.
 
-**Gate:** `/bef init` or `/bef adopt` must have been run.
+**Gate:** `/bef:init` or `/bef:adopt` must have been run.
 
 **Interview Protocol:**
 
@@ -203,7 +203,7 @@ it for review. Iterate if needed. When approved, mark Stage 1 complete in PROJEC
 
 ---
 
-### `/bef arch`
+### `/bef:arch`
 
 **Purpose:** Generate the four architecture documents based on the PRD.
 
@@ -229,7 +229,7 @@ include specific version numbers and rationale for each choice.
 
 ---
 
-### `/bef phases`
+### `/bef:phases`
 
 **Purpose:** Generate the master Phase Plan.
 
@@ -259,7 +259,7 @@ include specific version numbers and rationale for each choice.
 
 ---
 
-### `/bef deep-dive [phase-number]`
+### `/bef:deep-dive [phase-number]`
 
 **Purpose:** Create the detailed Phase Spec and Task Breakdown for a specific phase.
 
@@ -300,7 +300,7 @@ must already have their deep-dives complete.
 
 ---
 
-### `/bef sync [phase-number]`
+### `/bef:sync [phase-number]`
 
 **Purpose:** Push tasks from a phase's TASKS.md to Linear as a milestone with linked issues.
 
@@ -334,7 +334,7 @@ must already have their deep-dives complete.
 
 ---
 
-### `/bef execute [phase-number] [task-number]`
+### `/bef:execute [phase-number] [task-number]`
 
 **Purpose:** Execute a specific task — write the actual code.
 
@@ -358,7 +358,7 @@ must already have their deep-dives complete.
 
 ---
 
-### `/bef status`
+### `/bef:status`
 
 **Purpose:** Print the current project state.
 
@@ -372,7 +372,7 @@ must already have their deep-dives complete.
 
 ---
 
-### `/bef replan`
+### `/bef:replan`
 
 **Purpose:** Post-phase checkpoint. Review what was built against the plan and adjust.
 
@@ -397,7 +397,7 @@ Propose remediation phases if needed.
 
 ---
 
-### `/bef add-phase`
+### `/bef:add-phase`
 
 **Purpose:** Add a new phase to the project (post-initial-planning or during replan).
 
@@ -408,13 +408,13 @@ Propose remediation phases if needed.
    ordering is handled by the dependency graph, not numbering).
 4. Add the phase to PHASE_PLAN.md with full details (scope, dependencies, unlocks, complexity).
 5. Update PROJECT_STATE.md phase overview table.
-6. Inform the user to run `/bef deep-dive [N]` when ready to spec it out.
+6. Inform the user to run `/bef:deep-dive [N]` when ready to spec it out.
 
 **Output:** Updated PHASE_PLAN.md + PROJECT_STATE.md
 
 ---
 
-### `/bef amend [phase-number]`
+### `/bef:amend [phase-number]`
 
 **Purpose:** Revise an existing phase spec due to scope changes or new requirements.
 
@@ -425,7 +425,7 @@ Propose remediation phases if needed.
    "Revision History" section at the bottom).
 4. Update TASKS.md: add new tasks, remove obsolete ones, adjust existing ones.
 5. If the phase has already been synced to Linear, inform the user that they should re-run
-   `/bef sync [phase#]` to update Linear.
+   `/bef:sync [phase#]` to update Linear.
 6. Update PROJECT_STATE.md.
 
 **Output:** Updated PHASE_SPEC.md + TASKS.md + PROJECT_STATE.md
@@ -452,7 +452,7 @@ Propose remediation phases if needed.
 
 ## Interview Protocol Rules
 
-For `/bef prd` and `/bef deep-dive`:
+For `/bef:prd` and `/bef:deep-dive`:
 
 1. Ask **one focused question** at a time. Do not dump a list of 10 questions.
 2. **Summarize** what you've heard after every 2-3 exchanges. "Here's what I have so far..."
