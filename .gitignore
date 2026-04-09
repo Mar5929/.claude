@@ -25,7 +25,8 @@ hooks/gsd-*
 rules/mcp-*
 
 # Only track SF and BEF skills
-skills/*
+!skills/
 !skills/sf-*/
 !skills/sf-*/**
-!skills/bef*/**
+!skills/bef/
+!skills/bef/**
