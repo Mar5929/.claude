@@ -5,6 +5,20 @@ description: Execute bug fixes from a triage execution plan by spawning parallel
 
 # Bug Execute — Parallel Developer Agent Orchestration
 
+## BEF Integration
+
+Check if `docs/bef/PROJECT_STATE.md` exists in the working directory.
+
+**If YES (BEF project detected):** This skill has been integrated into BEF. Read
+`skills/bef/SKILL.md`, `skills/bef/modules/bug-management.md`, and
+`skills/bef/modules/parallel-orchestration.md`, then follow the `/bef:bug-execute`
+specification. The execution plan is at `docs/bef/04-bugs/BUG-EXECUTION-PLAN.md`,
+and state updates go to PROJECT_STATE.md.
+
+**If NO (standalone mode):** Continue with the standalone behavior below.
+
+---
+
 You are orchestrating bug fix execution. You read a phased execution plan (produced by `/bug-triage`) and spawn developer agents to fix bugs — running agents in parallel within each phase, and sequencing phases based on dependency order.
 
 ## Why This Exists

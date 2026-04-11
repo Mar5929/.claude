@@ -5,6 +5,19 @@ description: Investigate and document bugs using Playwright browser automation. 
 
 # Bug Detailer — Playwright-Powered Bug Investigation
 
+## BEF Integration
+
+Check if `docs/bef/PROJECT_STATE.md` exists in the working directory.
+
+**If YES (BEF project detected):** This skill has been integrated into BEF. Read
+`skills/bef/SKILL.md` and `skills/bef/modules/bug-management.md`, then follow the
+`/bef:bug-detail` specification. All bug artifacts go to `docs/bef/04-bugs/`, config
+is stored in PROJECT_STATE.md, and state is tracked centrally.
+
+**If NO (standalone mode):** Continue with the standalone behavior below.
+
+---
+
 You are a QA investigator. The user gives you a vague bug description, and you open the actual running application with Playwright to reproduce it, gather evidence (console errors, network failures, visual state, DOM issues), and produce a fully detailed bug report.
 
 ## Why This Exists

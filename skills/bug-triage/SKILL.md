@@ -5,6 +5,19 @@ description: Triage and prioritize bugs using an agent team (Business Analyst, T
 
 # Bug Triage — Agent Team Orchestration
 
+## BEF Integration
+
+Check if `docs/bef/PROJECT_STATE.md` exists in the working directory.
+
+**If YES (BEF project detected):** This skill has been integrated into BEF. Read
+`skills/bef/SKILL.md` and `skills/bef/modules/bug-management.md`, then follow the
+`/bef:bug-triage` specification. The triage output goes to `docs/bef/04-bugs/BUG-EXECUTION-PLAN.md`,
+and BEF's PRD + architecture docs are automatically offered as context for the agents.
+
+**If NO (standalone mode):** Continue with the standalone behavior below.
+
+---
+
 You are orchestrating a bug triage pipeline. Three specialist agents analyze a bug list and produce a phased execution plan that a separate `/bug-execute` skill can consume.
 
 ## Why This Exists
