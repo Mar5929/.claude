@@ -385,7 +385,7 @@ must already have their deep-dives complete.
 
 #### Phase-Level Execution (Agent Teams)
 
-**Trigger:** `/bef execute [phase#] --agent-teams`
+**Trigger:** `/bef:execute [phase#] --agent-teams`
 
 When the `--agent-teams` flag is present, the execute command enters orchestration mode.
 Instead of executing a single task, it analyzes all remaining tasks in the phase, groups
@@ -528,10 +528,11 @@ Wait for ALL agents in the wave to complete, then present a wave report:
 | 9 | TypeScript compilation failed |
 ```
 
-Offer the user three options:
+Offer the user four options:
 1. **Review worktrees** — inspect changes before merging
 2. **Merge all successful** — run the cherry-pick + verify workflow
-3. **Skip to next wave** — abandon this wave's changes (for emergencies)
+3. **Same as last wave** — shorthand for merge all without further prompts
+4. **Skip to next wave** — abandon this wave's changes (for emergencies)
 
 **Step 6: Cherry-pick, Verify, and Update State**
 
@@ -566,7 +567,7 @@ After the current wave is merged and verified:
    - Present the next wave plan for user approval.
    - Repeat from Step 4.
 4. If no ready tasks but incomplete tasks remain: report which tasks are blocked and why.
-5. If all tasks are Done: announce phase completion. Suggest running `/bef replan`.
+5. If all tasks are Done: announce phase completion. Suggest running `/bef:replan`.
 
 This creates a natural "wave" execution pattern:
 

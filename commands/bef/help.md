@@ -1,1 +1,1 @@
-Read the BEF skill file at `skills/bef/SKILL.md` and print the help guide exactly as defined in the `/bef help` section. Show all available commands, the pipeline overview, and the rules. Note: all BEF commands are under the `bef:` namespace (e.g., `/project:bef:init`, `/project:bef:prd`).
+Read the BEF skill file at `skills/bef/SKILL.md` and print the help guide exactly as defined in the `/bef:help` section. Show all available commands, the pipeline overview, and the rules. Note: all BEF commands are under the `bef:` namespace (e.g., `/bef:init`, `/bef:prd`).
