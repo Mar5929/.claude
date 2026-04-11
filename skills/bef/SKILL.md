@@ -2,12 +2,15 @@
 name: bef
 description: >
   Build Execution Framework (BEF) — A deterministic, repeatable framework for decomposing
-  full-stack application requirements into executable phases and tasks. Triggers on any /bef
-  slash command. Commands: /bef:help, /bef:init, /bef:adopt, /bef:prd, /bef:arch, /bef:phases,
-  /bef:deep-dive [phase#], /bef:sync [phase#], /bef:execute [phase#] [task#], /bef:status,
-  /bef:replan, /bef:add-phase, /bef:amend [phase#]. Use this skill for any structured project
-  planning, decomposition, or execution workflow. Also triggers when user mentions BEF, build
-  execution framework, project decomposition, phase planning, or references the /bef command.
+  full-stack application requirements into executable phases and tasks. Includes an integrated
+  bug management subsystem. Triggers on any /bef slash command. Commands: /bef:help, /bef:init,
+  /bef:adopt, /bef:prd, /bef:arch, /bef:phases, /bef:deep-dive [phase#], /bef:sync [phase#],
+  /bef:execute [phase#] [task#] (supports --agent-teams for wave-based parallel execution),
+  /bef:status, /bef:replan, /bef:add-phase, /bef:amend [phase#], /bef:bug-detail [desc],
+  /bef:bug-triage [source], /bef:bug-execute [phase], /bef:bug-status. Use this skill for
+  any structured project planning, decomposition, execution workflow, or bug management.
+  Also triggers when user mentions BEF, build execution framework, project decomposition,
+  phase planning, bug triage, bug investigation, or references the /bef command.
 ---
 
 # Build Execution Framework (BEF)
@@ -88,6 +91,18 @@ The templates are:
 - `templates/PHASE_PLAN.md` — Phase plan with dependencies
 - `templates/PHASE_SPEC.md` — Per-phase detailed specification
 - `templates/TASKS.md` — Per-phase task breakdown
+- `templates/BUG_REPORT.md` — Individual bug investigation report
+- `templates/BUG_EXECUTION_PLAN.md` — Triage execution plan
+- `templates/BUG_INDEX.md` — Bug index file (BUGS.md)
+
+## Modules
+
+For detailed specifications that extend the core framework, read the corresponding
+module file. Commands reference which modules they require.
+
+- `modules/bug-management.md` — Bug investigation, triage, and execution commands
+- `modules/parallel-orchestration.md` — Shared worktree dispatch pattern (used by
+  `execute --agent-teams` and `bug-execute`)
 
 ---
 
@@ -115,16 +130,25 @@ COMMANDS:
   /bef:phases                    Generate & review phase plan
   /bef:deep-dive [phase#]        Interview-based phase spec + task breakdown
   /bef:sync [phase#]             Push phase tasks to Linear
-  /bef:execute [phase#] [task#]  Build a specific task
+  /bef:execute [phase#] [task#]  Build a task (add --agent-teams for parallel phase execution)
   /bef:status                    Show current project state
   /bef:replan                    Post-phase checkpoint & adjustment
   /bef:add-phase                 Add a new phase to the plan
   /bef:amend [phase#]            Revise an existing phase spec
 
+BUG MANAGEMENT:
+  /bef:bug-detail [desc]         Investigate a bug with Playwright
+  /bef:bug-triage [source]       Triage bugs with 3-agent team
+  /bef:bug-execute [phase]       Fix bugs in parallel with agent teams
+  /bef:bug-status                Show bug tracking summary
+
 RULES:
   • Stages 1-3 (PRD → Arch → Phases) are sequential
   • Deep dives require dependency phases to be deep-dived first
   • Execute requires deep-dive + sync for that phase
+  • --agent-teams flag enables wave-based parallel execution with worktree isolation
+  • Bug commands require /bef:init but not pipeline stages 1-3
+  • Bug subsystem artifacts live in docs/bef/04-bugs/
   • Run replan after completing each phase
   • PROJECT_STATE.md is read before every command
 ```
@@ -137,9 +161,10 @@ RULES:
 
 **Behavior:**
 1. Ask for: project name, one-line description.
-2. Create the full directory structure under `docs/bef/`.
+2. Create the full directory structure under `docs/bef/`, including `04-bugs/` and `04-bugs/reports/`.
 3. Read the `templates/PROJECT_STATE.md` template and create the initial `PROJECT_STATE.md`
-   with the project name, description, and all stages marked as not started.
+   with the project name, description, all stages marked as not started, and the Bug Tracking
+   section with empty defaults.
 4. Confirm to the user that the project is initialized and instruct them to run `/bef:prd` next.
 
 **Output:** Directory structure + `PROJECT_STATE.md`
@@ -164,7 +189,9 @@ RULES:
 5. For the current in-progress phase: create the PHASE_SPEC.md and TASKS.md, then ask the
    user which tasks are already done. Mark them accordingly.
 6. For future phases: leave them as not started.
-7. Update PROJECT_STATE.md to reflect the true current state.
+7. Ask: "Do you have any existing bug tracking? Bug reports, issue lists, or a bug index?"
+   If yes, migrate those artifacts into `docs/bef/04-bugs/` and populate the Bug Tracking section.
+8. Update PROJECT_STATE.md to reflect the true current state.
 
 **Output:** Full directory structure + migrated artifacts + accurate PROJECT_STATE.md
 
@@ -356,6 +383,200 @@ must already have their deep-dives complete.
 
 **Output:** Working code + updated state files.
 
+#### Phase-Level Execution (Agent Teams)
+
+**Trigger:** `/bef execute [phase#] --agent-teams`
+
+When the `--agent-teams` flag is present, the execute command enters orchestration mode.
+Instead of executing a single task, it analyzes all remaining tasks in the phase, groups
+them into parallelizable waves, and dispatches agent teams to execute tasks simultaneously
+using worktree isolation.
+
+The orchestrator (this session) manages the full lifecycle:
+analysis → dispatch → merge → verify → state update.
+
+**Critical rule:** Worker agents only write code and commit. They never touch TASKS.md,
+PROJECT_STATE.md, or any `docs/bef/` tracking files. Only the orchestrator updates state.
+
+**Step 1: Analyze Ready Tasks**
+
+1. Read TASKS.md for the target phase.
+2. Identify all tasks where:
+   - Status = "Not Started"
+   - All tasks listed in "Depends On" have Status = "Done"
+3. These are the "ready tasks" — their dependencies are satisfied.
+4. If 0 tasks are ready: report that all tasks are either done or blocked, and which
+   tasks are blocking progress.
+5. If 1 task is ready: skip agent teams, execute it directly using single-task mode above.
+6. If 2+ tasks are ready: proceed to Step 2.
+
+**Step 2: Detect File Overlaps & Form Waves**
+
+For each ready task, extract the files it will likely touch from:
+- The "Implementation Notes" field in TASKS.md (files to create/modify)
+- The task scope description (infer which modules/directories are affected)
+- The PHASE_SPEC.md file/module structure section
+
+Build a conflict graph: two tasks conflict if they are likely to modify the same file(s).
+
+Form parallel groups (waves):
+- Tasks with NO file overlap with each other → same wave (can run in parallel)
+- Tasks that overlap with another ready task → defer to a later wave
+- Prefer larger waves (maximize parallelism) while keeping conflicting tasks separate
+
+If ALL ready tasks conflict with each other: recommend sequential execution instead
+of agent teams. Ask the user if they want to proceed sequentially or override.
+
+**Step 3: Present Execution Plan**
+
+Display the wave plan for user approval:
+
+```
+## Phase [N] Agent Teams Execution Plan
+
+**Ready tasks (dependencies met):** [count]
+
+### Wave 1
+| Task | Title | Complexity | Touches |
+|------|-------|-----------|---------|
+| 3 | [title] | S | src/api/users.ts, prisma/migrations/ |
+| 5 | [title] | M | src/components/dashboard/ |
+
+**File overlap check:** No conflicts detected ✓
+
+### Wave 2 (after Wave 1 merges)
+| Task | Title | Complexity | Why deferred |
+|------|-------|-----------|-------------|
+| 4 | [title] | M | Shares src/api/routes.ts with Task 3 |
+| 6 | [title] | S | Depends on Task 3 (newly unblocked) |
+
+### Still Blocked
+| Task | Waiting On |
+|------|-----------|
+| 8 | Tasks 6, 7 |
+
+**Estimated waves:** 2 parallel + 0 sequential
+**Proceed with Wave 1?** (Y / modify / switch to sequential)
+```
+
+Wait for user confirmation before dispatching.
+
+**Step 4: Dispatch Agent Team for Current Wave**
+
+For each task in the current wave, spawn an agent using the Agent tool with
+`isolation: "worktree"` and `run_in_background: true`.
+
+Agent prompt template:
+
+```
+You are executing a specific task from a BEF phase plan. Build exactly what the
+task specifies, following the acceptance criteria precisely.
+
+## Task Details
+[Full task block from TASKS.md — scope, acceptance criteria, implementation notes]
+
+## Phase Context
+[PHASE_SPEC.md contents]
+
+## Architecture Context
+[Only the relevant architecture docs — DATA_MODEL.md for schema work,
+SYSTEM_ARCHITECTURE.md for API work, INTEGRATION_MAP.md for external services, etc.
+Do NOT include all docs — select based on the task's domain.]
+
+## Rules
+1. Build ONLY what this task specifies. Do not work on other tasks.
+2. Follow the acceptance criteria exactly — each criterion must be met.
+3. Do NOT modify TASKS.md, PROJECT_STATE.md, or any docs/bef/ tracking files.
+4. Commit your work with message: `feat(phase-N/task-M): <short description>`
+5. If the task is already done (functionality exists), report this — don't duplicate.
+6. If the task is more complex than expected (would require changes beyond task scope),
+   stop and report this rather than attempting a risky implementation.
+7. Run relevant tests/typechecks after implementation to verify changes work.
+```
+
+Dispatch ALL agents in the wave simultaneously (single message, multiple Agent tool calls).
+
+**Step 5: Process Wave Results**
+
+As each agent completes, categorize the result:
+
+- **Completed**: Agent built the task and committed. Record commit hash + worktree path.
+- **Already Done**: Functionality already exists. Mark for status update without code changes.
+- **Too Complex**: Agent determined task exceeds safe scope in isolation. Flag for
+  sequential execution in a later wave.
+- **Failed**: Agent encountered errors. Capture error details for diagnosis.
+
+Wait for ALL agents in the wave to complete, then present a wave report:
+
+```
+## Wave [W] Results
+
+### Completed (X/Y tasks)
+| Task | Commit | Summary |
+|------|--------|---------|
+| 3 | abc1234 | Built user API endpoint with validation |
+| 5 | def5678 | Dashboard component with data fetching |
+
+### Needs Manual Execution (if any)
+| Task | Reason |
+|------|--------|
+| 7 | Too complex — requires auth middleware refactor |
+
+### Failed (if any)
+| Task | Error |
+|------|-------|
+| 9 | TypeScript compilation failed |
+```
+
+Offer the user three options:
+1. **Review worktrees** — inspect changes before merging
+2. **Merge all successful** — run the cherry-pick + verify workflow
+3. **Skip to next wave** — abandon this wave's changes (for emergencies)
+
+**Step 6: Cherry-pick, Verify, and Update State**
+
+When the user approves merging:
+
+1. **Cherry-pick** each completed agent's commit(s) onto the working branch, sequentially.
+   If a cherry-pick conflict occurs, pause and ask the user to resolve it.
+
+2. **Verify** — run the project's test/typecheck commands. If verification fails, diagnose
+   and fix integration issues between changes that were developed in isolation. Common
+   causes: shared imports modified by multiple tasks, index files both tasks updated.
+
+3. **Update TASKS.md** — for each completed task:
+   - Set Status to "Done"
+   - Set Completed to today's date
+   - Check off acceptance criteria
+
+4. **Update PROJECT_STATE.md** — update the execution progress count (e.g., "5/8 done").
+
+5. **Update Linear** — if Linear MCP tools are available, update issue statuses.
+
+6. **Clean up** — remove worktrees and branches for completed agents.
+
+**Step 7: Advance to Next Wave**
+
+After the current wave is merged and verified:
+
+1. Re-read TASKS.md to get the updated state.
+2. Re-analyze: identify newly ready tasks (dependencies just satisfied by this wave).
+3. If new ready tasks exist:
+   - Re-run file overlap detection and form the next wave.
+   - Present the next wave plan for user approval.
+   - Repeat from Step 4.
+4. If no ready tasks but incomplete tasks remain: report which tasks are blocked and why.
+5. If all tasks are Done: announce phase completion. Suggest running `/bef replan`.
+
+This creates a natural "wave" execution pattern:
+
+```
+Wave 1: Tasks 3, 5 (parallel) → merge → verify
+Wave 2: Tasks 4, 6, 7 (parallel, newly unblocked) → merge → verify
+Wave 3: Task 8 (single, execute directly) → verify
+Phase complete ✓
+```
+
 ---
 
 ### `/bef:status`
@@ -367,6 +588,8 @@ must already have their deep-dives complete.
 2. Print a clean summary of: pipeline progress, phase overview table, current focus,
    and any recent replan notes.
 3. If there are incomplete deep-dives blocking the next execution, call it out.
+4. If `docs/bef/04-bugs/BUGS.md` exists, include the Bug Tracking summary
+   (open/fixed counts by severity, active bug phase).
 
 **Output:** Formatted state summary (not a file, just console output).
 
@@ -382,6 +605,9 @@ must already have their deep-dives complete.
    - Did the completed phase deliver everything in its spec?
    - Are there any gaps between what's been built and what the PRD requires?
    - Do any future phase specs or the phase plan need adjustment based on what was learned?
+   - Are there open bugs in `docs/bef/04-bugs/BUGS.md`? Do any block future phases?
+   - Should a bug-fix wave be inserted before the next phase execution?
+   - Did bug fixes during execution change assumptions that affect upcoming phase specs?
 3. Report findings to the user. Propose changes if needed.
 4. If changes are needed:
    - Update PHASE_PLAN.md with revised phases, ordering, or scope.
